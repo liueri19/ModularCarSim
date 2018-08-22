@@ -1,0 +1,18 @@
+
+Structure:
+	carsim.neat module:		provides the algorithm that selects, improves, and reproduces new neural networks in each generation.
+			provides service to carsim.network module.
+			requires carsim.network module.
+	carsim.simulation module:	evaluates a neural network by doing the car carsim.simulation.
+			provides service to carsim.network module.
+			requires carsim.network module.
+	carsim.network module:		provides the core classes such as Network, Node, etc. that represents a neural network.
+
+In the finished product, the program starts with the carsim.network module, asks the carsim.neat module for a initial population of neural networks, then feeds the networks to carsim.simulation module. The carsim.simulation module evaluates the networks and returns the results to carsim.network module, who then gives them to the carsim.neat module. The carsim.neat module generates the next generation based on the results, which are then fed to carsim.simulation module, repeating until a network with sufficient fitness is found.
+
+
+Question:
+Handling for Bias nodes.
+In the current structure, nodes are activated by incoming connections calling write(). Since bias node does not have incoming connections, bias nodes cannot be activated this way. 2 solutions:
+	1, change the structure to first calling activate() on the InputNode, the InputNode in turn sends this to HiddenNodes and finally activating OutputNodes. The OutputNodes upon activation tries to read values from incoming connections, which then reads from other nodes. When a BiasNode is read from, the bias value is returned; otherwise the process continues until reaching the InputNodes, which returns the inputs. The Connections then apply the weight to the returned values and transmit them back toward the OutputNodes. Traveling the network 3 times, builds a stack twice the depth of the network, possibly inefficient?
+	2, add a non-functional incoming connection to BiasNodes. No change of current structure required. Values are written to the BiasNode same as any other node, but the value is ignored and the bias is returned.
