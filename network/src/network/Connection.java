@@ -1,7 +1,7 @@
 package network;
 
-import cloning.Copier;
-import cloning.Copyable;
+import cloning.DeepCopyable;
+import cloning.IdentityHashSet;
 
 import java.util.IdentityHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -10,20 +10,11 @@ import java.util.concurrent.atomic.AtomicLong;
  * Represents a connection between 2 neurons.
  * A connection has a weight and an innovation number.
  */
-public class Connection implements Copyable<Connection> {
-	private final Node prevNode;
-	private final Node nextNode;
+public class Connection implements DeepCopyable<Connection> {
+	private Node prevNode;
+	private Node nextNode;
 	private double weight;
-	private final long innovNum;
-
-	@Override
-	public Connection copy(IdentityHashMap<Object, Object> clones) {
-		return new Connection(
-				innovNum,
-				weight,
-				Copier.deepCopy(prevNode, clones),
-				Copier.deepCopy(nextNode, clones));
-	}
+	private long innovNum;
 
 	public Connection(long innovationNumber,
 					  double weight,
@@ -33,6 +24,33 @@ public class Connection implements Copyable<Connection> {
 		this.weight = weight;
 		this.prevNode = prevNode;
 		this.nextNode = nextNode;
+	}
+
+	/**
+	 * Constructs a copy of the specified object, handling circular references.
+	 */
+	public Connection(
+			Connection original,
+			IdentityHashMap<Object, Object> clones,
+			IdentityHashSet<Object> cloning) {
+		innovNum = original.innovNum;
+		weight = original.weight;
+
+
+	}
+
+	@Override
+	public Connection copy(IdentityHashMap<Object, Object> clones, IdentityHashSet<Object> cloning) {
+		cloning.add(this);
+
+		if (clones.containsKey(this))
+			return (Connection) clones.get(this);
+		return new Connection(this, clones, cloning);
+	}
+
+	@Override
+	public void fixNulls(Connection connection, IdentityHashMap<Object, Object> clones) {
+		// TODO fix
 	}
 
 	/**

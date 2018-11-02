@@ -51,7 +51,7 @@ public class Main {
 				evolver.initPopulation(populationSize, numInputs, numOutputs);
 
 
-		while () {
+		while (true) {	// TODO implement this
 			// evaluate networks
 			final Map<Network, Double> scores =
 					population.stream().collect(Collectors.toMap(n -> n, evaluator::evaluate));

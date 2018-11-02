@@ -1,6 +1,7 @@
 package neat;
 
 import network.Connection;
+import network.EvaluatedNetwork;
 import service.Evolver;
 import network.Network;
 
@@ -12,15 +13,26 @@ import java.util.Map;
 public final class Neat implements Evolver {
 
 	@Override
-	public Collection<Network> initPopulation(int numInputs, int numOutputs) {
+	public Collection<Network> initPopulation(int populationSize, int numInputs, int numOutputs) {
+		// TODO implement this
 		return null;
 	}
 
 	@Override
-	public Collection<Network> nextGeneration(Collection<? extends Network> prevGen) {
+	public Network initNetwork(int numInputs, int numOutputs) {
 		// TODO implement this
 		return null;
 	}
+
+	@Override
+	public Collection<Network> nextGeneration(
+			Collection<? extends EvaluatedNetwork> prevGen,
+			int nextGenSize,
+			double harshness) {
+		// TODO implement this
+		return null;
+	}
+
 
 
 	/**
@@ -28,7 +40,9 @@ public final class Neat implements Evolver {
 	 */
 	public Network reproduce(Network parent1, Network parent2) {	// more than 2 parents?
 
-		final Network child = new Network();
+//		final Network child = new Network();
+		// TODO implement this
+		final Network child = null;
 
 //		final Network fittest;
 //		// if of equal fitness, choose a random one

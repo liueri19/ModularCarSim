@@ -8,9 +8,13 @@ import java.util.function.DoubleUnaryOperator;
  * HiddenNode applies an activation function to received results from incoming
  * connections.
  */
-public final class HiddenNode extends Node {
+public final class HiddenNode extends Node<HiddenNode> {
 	private final DoubleUnaryOperator actFunc;
 
+	/**
+	 * Creates a HiddenNode in the Network.
+	 * The {@code activationFunction} must be stateless for proper cloning.
+	 */
 	public HiddenNode(long id,
 					  Collection<Connection> inputs,
 					  Collection<Connection> outputs,

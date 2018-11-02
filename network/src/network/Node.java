@@ -1,13 +1,15 @@
 package network;
 
-import cloning.Copyable;
+import cloning.DeepCopyable;
+import cloning.IdentityHashSet;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Fills in the basic stuff for implementing a Node.
  */
-public abstract class Node implements Comparable<Node>, Copyable<Node> {
+public abstract class Node<N extends Node<N>> implements Comparable<Node>, DeepCopyable<N> {
 
 	private final long ID;
 	private final List<Connection> inputs = new ArrayList<>();
@@ -77,32 +79,26 @@ public abstract class Node implements Comparable<Node>, Copyable<Node> {
 	public long getId() { return ID; }
 
 
-//	@Override
 	boolean addInput(Connection connection) {
 		return inputs.add(connection);
 	}
 
-//	@Override
 	boolean removeInput(Connection connection) {
 		return inputs.remove(connection);
 	}
 
-//	@Override
 	boolean addOutput(Connection connection) {
 		return outputs.add(connection);
 	}
 
-//	@Override
 	boolean removeOutput(Connection connection) {
 		return outputs.remove(connection);
 	}
 
-//	@Override
 	List<Connection> getInputs() {
 		return inputs;
 	}
 
-//	@Override
 	List<Connection> getOutputs() {
 		return outputs;
 	}
@@ -127,15 +123,54 @@ public abstract class Node implements Comparable<Node>, Copyable<Node> {
 	public boolean equals(Object obj) {
 		return obj instanceof Node && compareTo((Node) obj) == 0;
 	}
+
+
+	/**
+	 * Constructs a deep copy of the specified Node.
+	 * @param original	the Node to be copied
+	 */
+	Node(Node<N> original,
+		 IdentityHashMap<Object, Object> clones,
+		 IdentityHashSet<Object> cloning) {
+		this(original.getId(),
+				original.inputs.stream()
+						.map(c -> c.copy(clones, cloning))
+						.collect(Collectors.toList()),
+				original.outputs.stream()
+						.map(c -> c.copy(clones, cloning))
+						.collect(Collectors.toList())
+		);
+
+		this.result = original.result;
+		this.cached = original.cached;
+	}
+
+	@Override
+	public N copy(IdentityHashMap<Object, Object> clones, IdentityHashSet<Object> cloning) {
+		return null;
+	}
+
+	@Override
+	public void fixNulls(N original, IdentityHashMap<Object, Object> clones) {
+		DeepCopyable.fixCollection(original.getInputs(), inputs, clones);
+		DeepCopyable.fixCollection(original.getOutputs(), outputs, clones);
+	}
 }
 
 
 /**
  * An AbstractNode that does not have any incoming Connections.
  */
-abstract class ExitOnlyNode extends Node {
+abstract class ExitOnlyNode<N extends ExitOnlyNode<N>> extends Node<N> {
 	protected ExitOnlyNode(long id, Collection<Connection> outputs) {
 		super(id, null, outputs);
+	}
+
+	protected ExitOnlyNode(
+			ExitOnlyNode<N> original,
+			IdentityHashMap<Object, Object> clones,
+			IdentityHashSet<Object> cloning) {
+		super(original, clones, cloning);
 	}
 
 	@Override

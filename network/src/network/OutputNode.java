@@ -1,6 +1,9 @@
 package network;
 
+import cloning.IdentityHashSet;
+
 import java.util.Collection;
+import java.util.IdentityHashMap;
 import java.util.function.DoubleUnaryOperator;
 
 /**
@@ -8,9 +11,13 @@ import java.util.function.DoubleUnaryOperator;
  * function to the sum. There are not exiting connections from an OutputNode, and the
  * result can be read using {@link OutputNode#read()}.
  */
-public final class OutputNode extends Node {
+public final class OutputNode extends Node<OutputNode> {
 	private final DoubleUnaryOperator actFunc;
 
+	/**
+	 * Creates an OutputNode of a Network.
+	 * The {@code activationFunction} must be stateless for proper cloning.
+	 */
 	public OutputNode(long id,
 					  Collection<Connection> inputs,
 					  DoubleUnaryOperator activationFunction) {
@@ -28,5 +35,26 @@ public final class OutputNode extends Node {
 			result = actFunc.applyAsDouble(super.read());
 		}
 		return result;
+	}
+
+
+	// cloning
+
+	protected OutputNode(OutputNode original,
+					  IdentityHashMap<Object, Object> clones,
+					  IdentityHashSet<Object> cloning) {
+		super(original, clones, cloning);
+		actFunc = original.actFunc;	// TODO clone functions?
+	}
+
+	@Override
+	public OutputNode copy(IdentityHashMap<Object, Object> clones, IdentityHashSet<Object> cloning) {
+		return new OutputNode(this, clones, cloning);
+	}
+
+	@Override
+	public void fixNulls(OutputNode original, IdentityHashMap<Object, Object> clones) {
+		super.fixNulls(original, clones);
+
 	}
 }

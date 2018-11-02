@@ -107,13 +107,21 @@ public final class SimpleEvolver implements Evolver {
 	}
 
 
-	/** Randomly adds a Node to a copy of the specified Network. */
+	/**
+	 * Randomly adds a Node to a copy of the specified Network.
+	 * The original network is not modified.
+	 */
 	private Network randomlyAddNode(Network network) {
-
+		// TODO implement this
+		return null;
 	}
 
-	/** Randomly adds a Connection to a copy of the specified Network. */
+	/**
+	 * Randomly adds a Connection to a copy of the specified Network.
+	 * The original network is not modified.
+	 */
 	private Network randomlyAddConnection(Network network) {
-
+		// TODO implement this
+		return null;
 	}
 }

@@ -1,6 +1,7 @@
 package network;
 
-import cloning.Copier;
+import cloning.DeepCopyable;
+import cloning.IdentityHashSet;
 
 import java.util.*;
 import java.util.function.DoubleUnaryOperator;
@@ -11,7 +12,7 @@ import java.util.function.DoubleUnaryOperator;
  * A Network contains the genetic information of a genotype, at the same time also
  * provides the functions of a phenotype.
  */
-public class Network {
+public class Network implements DeepCopyable<Network> {
 	private final List<InputNode> inputs = new ArrayList<>();
 	private final List<OutputNode> outputs = new ArrayList<>();
 
@@ -20,27 +21,51 @@ public class Network {
 	private final SortedMap<Long, Connection> connections = new TreeMap<>();
 
 
+	// cloning
 
-	/**
-	 * Creates a copy of the specified Network. No objects from the new Network should be
-	 * related to the old Network.
-	 * @param network	the Network to copy
-	 */
-	public Network(Network network) {
-		final IdentityHashMap<Object, Object> clones = new IdentityHashMap<>();
+	protected Network(
+			Network original,
+			IdentityHashMap<Object, Object> clones,
+			IdentityHashSet<Object> cloning) {
+		for (InputNode node : original.inputs)
+			inputs.add(node.copy(clones, cloning));
 
-		for (InputNode n : network.getInputs())
-			inputs.add(Copier.deepCopy(n, clones));
-		for (OutputNode n : network.getOutputs())
-			outputs.add(Copier.deepCopy(n, clones));
+		for (OutputNode node : original.outputs)
+			outputs.add(node.copy(clones, cloning));
 
-		network.getHiddens().forEach(
-				(id, n) -> hiddens.put(id, Copier.deepCopy(n, clones))
-		);
-		network.getConnections().forEach(
-				(id, c) -> connections.put(id, Copier.deepCopy(c, clones))
-		);
+		for (Map.Entry<Long, HiddenNode> entry : original.hiddens.entrySet())
+			hiddens.put(entry.getKey(), entry.getValue().copy(clones, cloning));
+
+		for (Map.Entry<Long, Connection> entry : original.connections.entrySet())
+			connections.put(entry.getKey(), entry.getValue().copy(clones, cloning));
 	}
+
+
+	@Override
+	public Network copy(IdentityHashMap<Object, Object> clones, IdentityHashSet<Object> cloning) {
+		cloning.add(this);
+
+		final Network clone;
+		if (clones.containsKey(this))
+			clone = (Network) clones.get(this);
+		else
+			clone = new Network(this, clones, cloning);
+
+		cloning.remove(this);
+		return clone;
+	}
+
+
+	@Override
+	public void fixNulls(Network original, IdentityHashMap<Object, Object> clones) {
+		DeepCopyable.fixCollection(original.inputs, inputs, clones);
+		DeepCopyable.fixCollection(original.outputs, outputs, clones);
+
+		// TODO fix maps maybe?
+	}
+
+	////
+
 
 
 	/**
@@ -105,7 +130,7 @@ public class Network {
 		return outputs;
 	}
 
-	private void recursivelyDiscardCache(Node node) {
+	private void recursivelyDiscardCache(Node<?> node) {
 		node.discardCache();
 
 		// recursion ends when node has no input connections
