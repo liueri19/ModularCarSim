@@ -16,3 +16,7 @@ Handling for Bias nodes.
 In the current structure, nodes are activated by incoming connections calling write(). Since bias node does not have incoming connections, bias nodes cannot be activated this way. 2 solutions:
 	1, change the structure to first calling activate() on the InputNode, the InputNode in turn sends this to HiddenNodes and finally activating OutputNodes. The OutputNodes upon activation tries to read values from incoming connections, which then reads from other nodes. When a BiasNode is read from, the bias value is returned; otherwise the process continues until reaching the InputNodes, which returns the inputs. The Connections then apply the weight to the returned values and transmit them back toward the OutputNodes. Traveling the network 3 times, builds a stack twice the depth of the network, possibly inefficient?
 	2, add a non-functional incoming connection to BiasNodes. No change of current structure required. Values are written to the BiasNode same as any other node, but the value is ignored and the bias is returned.
+
+
+THINGS THAT ARE SETTLED:
+We are settled with javafx, no more changing graphics library. That's not even the important part.

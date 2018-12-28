@@ -14,7 +14,7 @@ public final class CarEvaluator implements Evaluator {
 
 		// TODO evaluate car progress
 
-		final long operations = world.getOperations();
+		final long operations = world.getOperationsConsumed();
 
 		final double progress = 0;
 

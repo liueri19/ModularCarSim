@@ -11,6 +11,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * The world where the car will be running around in.
  */
 public final class World extends Application {
+	// TODO World should not extend Application: the termination of an instance of which
+	//  does not imply the termination of the whole program
 	private static final int WIDTH = 1280, HEIGHT = 720;
 
 	private volatile boolean done = false;
@@ -25,7 +27,7 @@ public final class World extends Application {
 
 	// number of updates consumed in this simulation run
 	private volatile AtomicLong operations = new AtomicLong();
-	long getOperations() { return operations.longValue(); }
+	long getOperationsConsumed() { return operations.longValue(); }
 
 	
 
