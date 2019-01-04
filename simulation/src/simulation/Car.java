@@ -66,15 +66,15 @@ final class Car {
 			brake();
 
 		// new location based on velocity
-		x += getVeloctiy() * Math.cos(Math.toRadians(getHeading()));
-		y += getVeloctiy() * Math.sin(Math.toRadians(getHeading()));
+		x += getVelocity() * Math.cos(Math.toRadians(getHeading()));
+		y += getVelocity() * Math.sin(Math.toRadians(getHeading()));
 		updateDisplay();
 	}
 
 	private synchronized void brake() {
-		if (getVeloctiy() > DECELERATION)
+		if (getVelocity() > DECELERATION)
 			veloctiy -= DECELERATION;
-		else if (getVeloctiy() < -DECELERATION)
+		else if (getVelocity() < -DECELERATION)
 			veloctiy += DECELERATION;
 		else
 			veloctiy = 0;
@@ -91,7 +91,7 @@ final class Car {
 
 
 	private synchronized void handleTurning() {
-		if (getVeloctiy() == 0) return;	// no speed, no turning
+		if (getVelocity() == 0) return;	// no speed, no turning
 
 		if (isTurningLeft())
 			heading -= TURN_AMOUNT;
@@ -133,6 +133,6 @@ final class Car {
 	double getX() { return x; }
 	double getY() { return y; }
 
-	double getVeloctiy() { return veloctiy; }
+	double getVelocity() { return veloctiy; }
 	double getHeading() { return heading; }
 }
