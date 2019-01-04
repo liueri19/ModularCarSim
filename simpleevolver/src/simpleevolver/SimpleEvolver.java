@@ -42,6 +42,13 @@ public final class SimpleEvolver implements Evolver {
 	}
 
 
+	/**
+	 * Creates a Network with random connection from input to output nodes. The resulting
+	 * network has no hidden nodes.
+	 * @param numInputs     the number of input nodes of the resulting network
+	 * @param numOutputs    the number of output nodes of the resulting network
+	 * @return  a random Network with no hidden nodes
+	 */
 	@Override
 	public Network initNetwork(int numInputs, int numOutputs) {
 		final Network network = new Network(numInputs, numOutputs, Math::tanh);
@@ -64,6 +71,7 @@ public final class SimpleEvolver implements Evolver {
 	/**
 	 * Removes Networks with insufficient fitness, then multiply the survivors adding
 	 * random mutations.
+	 * @param harshness ratio of number of networks to be eliminated
 	 */
 	@Override
 	public Collection<Network> nextGeneration(

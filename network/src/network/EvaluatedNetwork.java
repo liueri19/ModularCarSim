@@ -1,5 +1,6 @@
 package network;
 
+// TODO eliminate this class?
 public final class EvaluatedNetwork {
 	private final Network network;
 	private final double fitness;

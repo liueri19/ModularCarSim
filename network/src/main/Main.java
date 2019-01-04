@@ -39,15 +39,23 @@ public class Main {
 		final Properties config = loadConfig(args[0]);
 
 
-		final int populationSize, numInputs, numOutputs;
-		populationSize =
+		// number of networks in each generation
+		final int populationSize =
 				Integer.parseInt(config.getProperty("population_size"));
-		numInputs =
+		// number of input nodes in each network
+		final int numInputs =
 				Integer.parseInt(config.getProperty("num_input_nodes"));
-		numOutputs =
+		// number of output nodes in each network
+		final int numOutputs =
 				Integer.parseInt(config.getProperty("num_output_nodes"));
+		// ratio of number of networks to be eliminated each new generation
+		// e.g. a harshness of 0.75 means 75% of networks will not survive and only the
+		// top 25% will survive to the next generation
+		final int harshness =
+				Integer.parseInt(config.getProperty("harshness"));
 
-		final Collection<Network> population =
+		// init first generation, to be updated later, must be mutable
+		Collection<Network> population =
 				evolver.initPopulation(populationSize, numInputs, numOutputs);
 
 
