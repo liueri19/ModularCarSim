@@ -4,6 +4,13 @@ import network.Network;
 import service.Evaluator;
 
 public final class CarEvaluator implements Evaluator {
+
+	/*
+	Evaluator must accommodate for life cycle of the javafx application, i.e.,
+	Application class (World) can only be initialized once, therefore simulation and
+	display of which must be implemented with one single run
+	 */
+
 	@Override
 	public double evaluate(Network network) {
 		World.main();

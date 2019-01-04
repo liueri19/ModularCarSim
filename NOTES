@@ -1,12 +1,15 @@
 
 Structure:
-	carsim.neat module:		provides the algorithm that selects, improves, and reproduces new neural networks in each generation.
-			provides service to carsim.network module.
-			requires carsim.network module.
-	carsim.simulation module:	evaluates a neural network by doing the car carsim.simulation.
-			provides service to carsim.network module.
-			requires carsim.network module.
-	carsim.network module:		provides the core classes such as Network, Node, etc. that represents a neural network.
+	carsim.neat module:
+		provides the algorithm that selects, improves, and reproduces new neural networks in each generation.
+		provides service to carsim.network module.
+		requires carsim.network module.
+	carsim.simulation module:
+		evaluates a neural network by doing the car carsim.simulation.
+		provides service to carsim.network module.
+		requires carsim.network module.
+	carsim.network module:
+		provides the core classes such as Network, Node, etc. that represents a neural network.
 
 In the finished product, the program starts with the carsim.network module, asks the carsim.neat module for a initial population of neural networks, then feeds the networks to carsim.simulation module. The carsim.simulation module evaluates the networks and returns the results to carsim.network module, who then gives them to the carsim.neat module. The carsim.neat module generates the next generation based on the results, which are then fed to carsim.simulation module, repeating until a network with sufficient fitness is found.
 

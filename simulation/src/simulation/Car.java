@@ -23,6 +23,7 @@ final class Car {
 	private static final int WIDTH = 40, LENGTH = 70;
 
 	private final Rectangle DISPLAY = new Rectangle(WIDTH, LENGTH);
+	Rectangle getDisplay() { return DISPLAY; }
 
 
 	private volatile double x, y;
@@ -46,8 +47,6 @@ final class Car {
 		DISPLAY.setFill(Color.LIGHTGREEN);
 		DISPLAY.setRotate(90);	// clockwise 90
 	}
-
-	Rectangle getDisplay() { return DISPLAY; }
 
 
 	/**

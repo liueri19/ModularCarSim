@@ -1,6 +1,7 @@
 package simulation;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
@@ -11,8 +12,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * The world where the car will be running around in.
  */
 public final class World extends Application {
-	// TODO World should not extend Application: the termination of an instance of which
-	//  does not imply the termination of the whole program
 	private static final int WIDTH = 1280, HEIGHT = 720;
 
 	private volatile boolean done = false;
@@ -29,7 +28,10 @@ public final class World extends Application {
 	private volatile AtomicLong operations = new AtomicLong();
 	long getOperationsConsumed() { return operations.longValue(); }
 
-	
+
+
+	// TODO Start an Application programmatically such that more parameters for
+	//  additional simulations may be supplied.
 
 	@Override
     public void start(Stage primaryStage) {
@@ -53,7 +55,7 @@ public final class World extends Application {
 		primaryStage.show();
 
 		// run simulation
-		new Thread(() -> {
+		final Thread simulationThread = new Thread(() -> {
 			while (!done) {
 				try { Thread.sleep(10); }
 				catch (InterruptedException e) {
@@ -62,12 +64,15 @@ public final class World extends Application {
 					terminate();
 				}
 
-				car.update();
+//				car.update();
+				Platform.runLater(car::update);
 				// TODO instead of updating car, update view of surrounding
 
 				operations.getAndIncrement();
 			}
-		}).start();
+		});
+		simulationThread.setDaemon(true);
+		simulationThread.start();
     }
 
 
