@@ -1,6 +1,6 @@
 package network;
 
-import cloning.IdentityHashSet;
+import util.IdentityHashSet;
 
 import java.util.Collection;
 import java.util.IdentityHashMap;

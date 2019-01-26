@@ -5,7 +5,7 @@ module carsim.network {
 
 	exports network;
 	exports service;
-	exports cloning;
+	exports util;
 
 	uses Evaluator;
 	uses Evolver;

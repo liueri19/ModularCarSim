@@ -1,6 +1,5 @@
 package simpleevolver;
 
-import network.EvaluatedNetwork;
 import service.Evolver;
 import network.Network;
 import network.Node;
@@ -75,7 +74,7 @@ public final class SimpleEvolver implements Evolver {
 	 */
 	@Override
 	public Collection<Network> nextGeneration(
-			Collection<? extends EvaluatedNetwork> prevGen,
+			Map<? extends Network, ? extends Double> prevGenToFitness,
 			int nextGenSize,
 			double harshness) {
 		if (nextGenSize < 0)
@@ -83,19 +82,21 @@ public final class SimpleEvolver implements Evolver {
 		if (harshness < 0 || harshness > 1)
 			throw new IllegalArgumentException("harshness must be between 0 and 1 inclusive");
 
-		// eliminate
-		final List<EvaluatedNetwork> sortedNetworks = new ArrayList<>(prevGen);
-		sortedNetworks.sort(
-				Comparator.comparingDouble(EvaluatedNetwork::getFitness).reversed()
-		);
+		// sort networks by fitness
+		final List<Map.Entry<? extends Network, ? extends Double>> entries =
+				new ArrayList<>(prevGenToFitness.entrySet());
+		entries.sort(Comparator.comparingDouble(Map.Entry::getValue));
 
-		final int numSurvivors =
-				Math.toIntExact(Math.round(sortedNetworks.size() * (1 - harshness)));
+		final List<Network> sortedNetworks = new ArrayList<>();
+		entries.forEach(entry -> sortedNetworks.add(entry.getKey()));
+
+		// eliminate
+		final long numSurvivors =
+				Math.round(prevGenToFitness.size() * (1 - harshness));
 
 		final List<Network> survivors =
 				sortedNetworks.stream()
 						.limit(numSurvivors)
-						.map(EvaluatedNetwork::getNetwork)
 						.collect(Collectors.toList());
 
 
@@ -113,6 +114,7 @@ public final class SimpleEvolver implements Evolver {
 
 		return nextGen;
 	}
+
 
 
 	/**

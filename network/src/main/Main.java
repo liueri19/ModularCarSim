@@ -7,11 +7,7 @@ import service.Evolver;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Properties;
-import java.util.ServiceLoader;
-import java.util.stream.Collectors;
+import java.util.*;
 
 public class Main {
 
@@ -51,19 +47,25 @@ public class Main {
 		// ratio of number of networks to be eliminated each new generation
 		// e.g. a harshness of 0.75 means 75% of networks will not survive and only the
 		// top 25% will survive to the next generation
-		final int harshness =
-				Integer.parseInt(config.getProperty("harshness"));
+		final double harshness =
+				Double.parseDouble(config.getProperty("harshness"));
+		final double minFitness =
+				Double.parseDouble(config.getProperty("min_fitness"));
 
 		// init first generation, to be updated later, must be mutable
 		Collection<Network> population =
 				evolver.initPopulation(populationSize, numInputs, numOutputs);
 
 
-		while (true) {	// TODO implement this
+		double bestFitness;
+		do {
 			// evaluate networks
-			final Map<Network, Double> scores =
-					population.stream().collect(Collectors.toMap(n -> n, evaluator::evaluate));
-		}
+			final Map<Network, Double> evaluatedNetworks = evaluator.evaluate(population);
+			bestFitness = evaluatedNetworks.values().iterator().next(); // first element
+
+			// next generation
+			population = evolver.nextGeneration(evaluatedNetworks, populationSize, harshness);
+		} while (bestFitness < minFitness);
 
 		// TODO find champ
 	}

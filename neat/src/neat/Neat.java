@@ -1,7 +1,6 @@
 package neat;
 
 import network.Connection;
-import network.EvaluatedNetwork;
 import service.Evolver;
 import network.Network;
 
@@ -26,7 +25,7 @@ public final class Neat implements Evolver {
 
 	@Override
 	public Collection<Network> nextGeneration(
-			Collection<? extends EvaluatedNetwork> prevGen,
+			Map<? extends Network, ? extends Double> prevGenToFitness,
 			int nextGenSize,
 			double harshness) {
 		// TODO implement this

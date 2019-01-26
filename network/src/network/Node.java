@@ -1,7 +1,7 @@
 package network;
 
-import cloning.DeepCopyable;
-import cloning.IdentityHashSet;
+import util.DeepCopyable;
+import util.IdentityHashSet;
 
 import java.util.*;
 import java.util.stream.Collectors;

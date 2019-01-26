@@ -1,9 +1,9 @@
 package service;
 
-import network.EvaluatedNetwork;
 import network.Network;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * An Evolver can provide an initial population to be used in neural evolution and produce
@@ -18,13 +18,14 @@ public interface Evolver {
 
 	/**
 	 * Produces the next generation based on the previous generation.
-	 * @param prevGen    the previous generation
+	 * @param prevGenToFitness    map of previous generation networks to fitness
 	 * @param nextGenSize    the number of Networks in the next generation
-	 * @param harshness    the ratio of Networks allowed to survive in the current generation
+	 * @param harshness    the ratio of Networks to be eliminated to the number of
+	 *                        Networks in the current generation
 	 * @return	the next generation
 	 */
 	Collection<Network> nextGeneration(
-			Collection<? extends EvaluatedNetwork> prevGen,
+			Map<? extends Network, ? extends Double> prevGenToFitness,
 			int nextGenSize,
 			double harshness);
 }

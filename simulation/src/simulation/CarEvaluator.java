@@ -10,10 +10,21 @@ public final class CarEvaluator implements Evaluator {
 	Application class (World) can only be initialized once, therefore simulation and
 	display of which must be implemented with one single run
 	 */
+	private static volatile boolean javaFxStarted = false;
 
+	/**
+	 * Evaluates the specified Network.
+	 * This method starts the JavaFX runtime the first time it is invoked across all
+	 * instances.
+	 * @param network	evaluation target
+	 * @return the fitness of the network
+	 */
 	@Override
 	public double evaluate(Network network) {
-		World.main();
+		if (!javaFxStarted) {
+			World.main();
+			javaFxStarted = true;
+		}
 
 		World world = World.getWorld();
 		while (world == null)	// spin wait for non-null value
