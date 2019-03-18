@@ -30,16 +30,13 @@ public final class World extends Application {
 
 
 
-	// TODO Start an Application programmatically such that more parameters for
-	//  additional simulations may be supplied.
-
 	@Override
     public void start(Stage primaryStage) {
 		world = this;
 
 		primaryStage.setResizable(false);
 
-		car = new Car(WIDTH / 2, HEIGHT / 2);
+		car = new Car(WIDTH / 2d, HEIGHT / 2d);
 
 		final Pane root = new Pane(car.getDisplay());
 
@@ -64,7 +61,7 @@ public final class World extends Application {
 					terminate();
 				}
 
-//				car.update();
+				// changes involving graphics objects needs to be done on
 				Platform.runLater(car::update);
 				// TODO instead of updating car, update view of surrounding
 

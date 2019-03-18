@@ -22,6 +22,7 @@ public final class CarEvaluator implements Evaluator {
 	@Override
 	public double evaluate(Network network) {
 		if (!javaFxStarted) {
+			// initializes the World class, which would init JavaFX
 			World.main();
 			javaFxStarted = true;
 		}

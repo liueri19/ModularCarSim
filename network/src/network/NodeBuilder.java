@@ -97,7 +97,7 @@ public class NodeBuilder {
 			case BIAS:
 				return new Bias(getId(), getValue(), getOutputs());
 			default:
-				throw new RuntimeException("You idiot forgot to add case for new enum");
+				throw new RuntimeException("Unknown node type: " + type);
 		}
 	}
 }

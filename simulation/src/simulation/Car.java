@@ -28,7 +28,7 @@ final class Car {
 
 	private volatile double x, y;
 	// heading is in degrees, increasing clockwise, 0 facing right.
-	private volatile double veloctiy, heading;
+	private volatile double velocity, heading;
 
 	private volatile boolean isAccelerating, isDecelerating, isBraking, isTurningLeft, isTurningRight;
 	/*
@@ -59,9 +59,9 @@ final class Car {
 
 	private synchronized void handleLocation() {
 		if (isAccelerating())
-			veloctiy += ACCELERATION;
+			velocity += ACCELERATION;
 		if (isDecelerating())
-			veloctiy -= ACCELERATION;
+			velocity -= ACCELERATION;
 		if (isBraking())
 			brake();
 
@@ -73,11 +73,11 @@ final class Car {
 
 	private synchronized void brake() {
 		if (getVelocity() > DECELERATION)
-			veloctiy -= DECELERATION;
+			velocity -= DECELERATION;
 		else if (getVelocity() < -DECELERATION)
-			veloctiy += DECELERATION;
+			velocity += DECELERATION;
 		else
-			veloctiy = 0;
+			velocity = 0;
 	}
 
 	/**
@@ -85,8 +85,8 @@ final class Car {
 	 * this Car.
 	 */
 	private void updateDisplay() {
-		DISPLAY.setX(getX() - WIDTH / 2);
-		DISPLAY.setY(getY() - LENGTH / 2);
+		DISPLAY.setX(getX() - WIDTH / 2d);
+		DISPLAY.setY(getY() - LENGTH / 2d);
 	}
 
 
@@ -133,6 +133,6 @@ final class Car {
 	double getX() { return x; }
 	double getY() { return y; }
 
-	double getVelocity() { return veloctiy; }
+	double getVelocity() { return velocity; }
 	double getHeading() { return heading; }
 }

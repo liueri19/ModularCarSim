@@ -52,7 +52,7 @@ public final class SimpleEvolver implements Evolver {
 	public Network initNetwork(int numInputs, int numOutputs) {
 		final Network network = new Network(numInputs, numOutputs, Math::tanh);
 
-		// for each pair of input to output
+		// randomly connect input to output nodes
 		for (Node input : network.getInputs()) {
 			for (Node output : network.getOutputs()) {
 				final boolean doConnect = random.nextBoolean();

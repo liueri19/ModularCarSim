@@ -18,6 +18,11 @@ public abstract class Node<N extends Node<N>> implements Comparable<Node>, DeepC
 
 	Node(long id, Collection<Connection> inputs, Collection<Connection> outputs) {
 		ID = id;
+
+		// addAll method does not accept null argument
+		if (inputs == null) inputs = Collections.emptyList();
+		if (outputs == null) outputs = Collections.emptyList();
+
 		this.inputs.addAll(inputs);
 		this.outputs.addAll(outputs);
 	}
