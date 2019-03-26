@@ -7,5 +7,7 @@ module carsim.simulation {
 
 	requires carsim.network;
 
-	provides Evaluator with simulation.CarEvaluator;
+	provides Evaluator with simulation.SimEvaluator;
 }
+
+// IntelliJ just refuses to compile this for some reason. Manual javac works fine.
