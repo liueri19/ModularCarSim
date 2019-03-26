@@ -2,6 +2,9 @@ package simulation;
 
 import javafx.scene.shape.Polyline;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -27,13 +30,6 @@ final class Track {
 	static final class TrackBuilder {
 		private final List<Point> points = new ArrayList<>();
 
-		/**
-		 * Constructs a TrackBuilder starting at the specified location.
-		 */
-		TrackBuilder(final double x, final double y) {
-			blockTo(x, y);
-		}
-
 		void blockTo(final double x, final double y) {
 			points.add(new Point(x, y));
 		}
@@ -41,6 +37,44 @@ final class Track {
 		Track build() {
 			return new Track(points);
 		}
+	}
+
+
+	/**
+	 * Loads track from the specified file.
+	 * @param filename  path to the track file
+	 * @return  a new Track defined as in the specified file
+	 */
+	static Track load(final String filename) {
+		try {
+			// read file
+			final List<String> lines = Files.readAllLines(Paths.get(filename));
+
+			final TrackBuilder builder = new TrackBuilder();
+
+			// for each line
+			for (int i = 0; i < lines.size(); i++) {
+				final String line = lines.get(i);
+
+				// split x and y
+				final var parts = line.split("\\h*");
+				if (parts.length != 2) {
+					throw new IllegalArgumentException(
+							"Bad entry on line " + i + "in file '" + filename + "'");
+				}
+
+				// add entry to Track
+				builder.blockTo(Double.parseDouble(parts[0]), Double.parseDouble(parts[1]));
+			}
+
+			return builder.build();
+		}
+		catch (IOException e) {
+			System.err.println("IOException occurred reading file '" + filename + "'");
+			e.printStackTrace();
+		}
+
+		throw new IllegalStateException("Failed to build Track");
 	}
 
 

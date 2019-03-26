@@ -7,9 +7,13 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import network.Network;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -32,7 +36,7 @@ public final class World extends Application {
 	private volatile AtomicLong clock = new AtomicLong();
 
 
-	private final Track track = null;   // TODO implement load track
+	private final Track track = Track.load(loadConfig("carsim.properties").getProperty("track"));
 
 	/** Each driver controls a car. */
 	private final List<Driver> drivers = new ArrayList<>();
@@ -169,5 +173,20 @@ public final class World extends Application {
 				}
 			}
 		});
+	}
+
+
+	private static Properties loadConfig(String file) {
+		final Properties config = new Properties();
+
+		try {
+			config.load(Files.newInputStream(Paths.get(file)));
+		}
+		catch (IOException e) {
+			System.err.println("Failed to read config file '" + file + "'");
+			e.printStackTrace();
+		}
+
+		return config;
 	}
 }
