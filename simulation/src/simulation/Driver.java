@@ -2,8 +2,6 @@ package simulation;
 
 import network.Network;
 
-import java.util.Comparator;
-
 /**
  * Represents a Driver of a Car in the World. In addition to a reference to a Network
  * instance used to control the Car, instances of this class also record the number of

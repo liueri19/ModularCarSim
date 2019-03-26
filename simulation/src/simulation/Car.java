@@ -28,6 +28,7 @@ final class Car {
 	private static final int WIDTH = 40, LENGTH = 70;
 
 	private final Rectangle DISPLAY = new Rectangle(WIDTH, LENGTH);
+	Rectangle asShape() { return DISPLAY; }
 
 
 	private volatile double x, y;
@@ -184,11 +185,14 @@ final class Car {
 
 
 	/**
-	 * Updates the states of the car, such as speed, heading, and location,
+	 * Updates the states of the car, such as speed, heading, and location.
 	 */
 	synchronized void update() {
 		handleTurning();
 		handleLocation();
+
+		// graphics must be run by JavaFX application thread
+		Platform.runLater(this::updateDisplay);
 	}
 
 	private synchronized void handleLocation() {
@@ -202,9 +206,6 @@ final class Car {
 		// new location based on velocity
 		x += getVelocity() * Math.cos(Math.toRadians(getHeading()));
 		y += getVelocity() * Math.sin(Math.toRadians(getHeading()));
-
-		// graphics must be run by JavaFX application thread
-		Platform.runLater(this::updateDisplay);
 	}
 
 	private synchronized void brake() {

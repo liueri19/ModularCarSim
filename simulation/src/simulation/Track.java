@@ -1,5 +1,6 @@
 package simulation;
 
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Polyline;
 
 import java.io.IOException;
@@ -81,7 +82,7 @@ final class Track {
 
 	private final List<Obstacle> edges = new ArrayList<>();
 	private final Polyline polyline = new Polyline();
-	Polyline asPolyline() { return polyline; }
+	Polyline asShape() { return polyline; }
 
 	private Track(final List<Point> points) {
 		if (points.size() % 2 != 0)
@@ -93,6 +94,9 @@ final class Track {
 			trackPoints.add(point.x);
 			trackPoints.add(point.y);
 		});
+		// Shape's subtract, union, and intersect methods require fill
+		polyline.setFill(Color.TRANSPARENT);
+		polyline.setStrokeWidth(5);
 
 		// set up edges
 		for (int i = 1; i < points.size(); i++) {

@@ -3,17 +3,15 @@ package simulation;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 import network.Network;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -28,12 +26,19 @@ public final class World extends Application {
 	void terminate() { done = true; }
 
 
+//	/** A manually controlled car for debug */
+//	private final Car debugCar = new Car(START_X, START_Y, Color.LIGHTGREEN);
+//	/** debug flag. if true, debugCar will be displayed. */
+//	private volatile boolean debug = false;
+//	private final Object debugLock = new Object();
+
+
 	// singleton
 	private static World world;
 	static World getWorld() { return world; }
 
 	// number of updates consumed in this simulation run
-	private volatile AtomicLong clock = new AtomicLong();
+	private final AtomicLong opsCount = new AtomicLong();
 
 
 	private final Track track = Track.load(loadConfig("carsim.properties").getProperty("track"));
@@ -41,16 +46,19 @@ public final class World extends Application {
 	/** Each driver controls a car. */
 	private final List<Driver> drivers = new ArrayList<>();
 
-	void addDriver(final Network network) {
-		drivers.add(
-				new Driver(track, new Car(START_X, START_Y), network)
-		);
-	}
+	/** No conceptual significance, purely for implementation convenience. */
+	private final Map<Car, Driver> carToDrivers = new HashMap<>();
 
+	void addDriver(final Network network) {
+		final Car car = new Car(START_X, START_Y);
+		final Driver driver = new Driver(track, car, network);
+
+		drivers.add(driver);
+		carToDrivers.put(car, driver);
+	}
 	void addDrivers(final Collection<? extends Network> networks) {
 		networks.forEach(this::addDriver);
 	}
-
 	List<Driver> getDrivers() { return new ArrayList<>(drivers); }
 
 
@@ -65,16 +73,38 @@ public final class World extends Application {
 		// run sim
 		try {
 			while (!done) {
-				Thread.sleep(10);
-
-				getDrivers().forEach(Driver::drive);
 				// TODO instead of updating car, update view of surrounding
 
-				clock.getAndIncrement();
+				Thread.sleep(10);
+
+				// let networks do their thing
+				drivers.forEach(Driver::drive);
+				// update cars (position and graphics)
+				carToDrivers.keySet().forEach(Car::update);
+
+
+				// check for collision with track edges
+				for (final var it = carToDrivers.entrySet().iterator(); it.hasNext(); ) {
+
+					final var entry = it.next();
+					final Car car = entry.getKey();
+					final Driver driver = entry.getValue();
+
+					final var diff = Shape.subtract(car.asShape(), track.asShape());
+					if (!diff.getBoundsInLocal().isEmpty()) {
+						// drove out of the track
+//						driver.setCompletion(); // TODO compute completion
+						driver.setOperations(opsCount.get());
+
+						it.remove();
+					}
+				}
+
+				opsCount.getAndIncrement();
 			}
 		}
 		catch (InterruptedException e) {
-			System.err.println("Simulation Interrupted");
+			System.err.println("Simulation interrupted");
 			Thread.currentThread().interrupt();
 			terminate();
 		}
@@ -82,8 +112,11 @@ public final class World extends Application {
 
 	/** Resets the operation counter and remove all drivers. */
 	synchronized void reset() {
-		clock.set(0);
+		opsCount.set(0);
 		drivers.clear();
+		carToDrivers.clear();
+		// remove all Car displays
+		root.getChildren().removeIf(e -> e instanceof Rectangle);
 		simRan = false;
 	}
 
@@ -92,12 +125,6 @@ public final class World extends Application {
 	/* ****************************************
 	Everything below is mostly display related.
 	******************************************/
-
-	/** A manually controlled car for debug */
-	private final Car debugCar = new Car(START_X, START_Y, Color.LIGHTGREEN);
-	/** debug flag. if true, debugCar will be displayed. */
-	private volatile boolean debug = false;
-	private final Object debugLock = new Object();
 
 	private Stage stage;
 	/** the root node upon which entities to be displayed may be added */
@@ -118,6 +145,8 @@ public final class World extends Application {
 
 		stage.setOnCloseRequest(event -> terminate());
 
+		root.getChildren().add(track.asShape());
+
 		stage.setScene(scene);
 		stage.show();
     }
@@ -130,48 +159,48 @@ public final class World extends Application {
     private void setUpKeyHandlers(Scene scene) {
 		scene.setOnKeyPressed(event -> {
 			// manual control for debug
-			if (debug) {
-				switch (event.getCode()) {
-					case A: case LEFT:
-						debugCar.setIsTurningLeft(true); break;
-					case D: case RIGHT:
-						debugCar.setIsTurningRight(true); break;
-					case W: case UP:
-						debugCar.setIsAccelerating(true); break;
-					case S: case DOWN:
-						debugCar.setIsDecelerating(true); break;
-					case SPACE: case SHIFT:
-						debugCar.setIsBraking(true); break;
-				}
-			}
+//			if (debug) {
+//				switch (event.getCode()) {
+//					case A: case LEFT:
+//						debugCar.setIsTurningLeft(true); break;
+//					case D: case RIGHT:
+//						debugCar.setIsTurningRight(true); break;
+//					case W: case UP:
+//						debugCar.setIsAccelerating(true); break;
+//					case S: case DOWN:
+//						debugCar.setIsDecelerating(true); break;
+//					case SPACE: case SHIFT:
+//						debugCar.setIsBraking(true); break;
+//				}
+//			}
 
 			switch (event.getCode()) {
 				case ESCAPE: case Q:
 					world.terminate(); stage.close(); break;
-				case V:
-					synchronized (debugLock) {
-						debug = !debug;
-					}
-					break;
+//				case V:
+//					synchronized (debugLock) {
+//						debug = !debug;
+//					}
+//					break;
 			}
 		});
 
 		scene.setOnKeyReleased(event -> {
 			// manual control for debug
-			if (debug) {
-				switch (event.getCode()) {
-					case A: case LEFT:
-						debugCar.setIsTurningLeft(false); break;
-					case D: case RIGHT:
-						debugCar.setIsTurningRight(false); break;
-					case W: case UP:
-						debugCar.setIsAccelerating(false); break;
-					case S: case DOWN:
-						debugCar.setIsDecelerating(false); break;
-					case SPACE: case SHIFT:
-						debugCar.setIsBraking(false); break;
-				}
-			}
+//			if (debug) {
+//				switch (event.getCode()) {
+//					case A: case LEFT:
+//						debugCar.setIsTurningLeft(false); break;
+//					case D: case RIGHT:
+//						debugCar.setIsTurningRight(false); break;
+//					case W: case UP:
+//						debugCar.setIsAccelerating(false); break;
+//					case S: case DOWN:
+//						debugCar.setIsDecelerating(false); break;
+//					case SPACE: case SHIFT:
+//						debugCar.setIsBraking(false); break;
+//				}
+//			}
 		});
 	}
 
