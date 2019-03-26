@@ -55,6 +55,7 @@ final class Track {
 			// for each line
 			for (int i = 0; i < lines.size(); i++) {
 				final String line = lines.get(i);
+				if (line.isBlank()) continue;   // ignore blank lines
 
 				// split x and y
 				final var parts = line.split("\\h*");
