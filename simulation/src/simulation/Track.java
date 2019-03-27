@@ -5,8 +5,10 @@ import javafx.scene.shape.Polyline;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -20,6 +22,11 @@ final class Track {
 
 		private Point(final double x, final double y) {
 			this.x = x; this.y = y;
+		}
+
+		@Override
+		public String toString() {
+			return "(" + x + ", " + y + ")";
 		}
 	}
 
@@ -47,9 +54,11 @@ final class Track {
 	 * @return  a new Track defined as in the specified file
 	 */
 	static Track load(final String filename) {
+		final Path path = Paths.get(filename);
+
 		try {
 			// read file
-			final List<String> lines = Files.readAllLines(Paths.get(filename));
+			final List<String> lines = Files.readAllLines(path);
 
 			final TrackBuilder builder = new TrackBuilder();
 
@@ -59,10 +68,10 @@ final class Track {
 				if (line.isBlank()) continue;   // ignore blank lines
 
 				// split x and y
-				final var parts = line.split("\\h*");
+				final var parts = line.split("\\h+");
 				if (parts.length != 2) {
 					throw new IllegalArgumentException(
-							"Bad entry on line " + i + "in file '" + filename + "'");
+							"Bad entry on line " + i+1 + " in file '" + path.toAbsolutePath() + "'");
 				}
 
 				// add entry to Track
@@ -72,7 +81,7 @@ final class Track {
 			return builder.build();
 		}
 		catch (IOException e) {
-			System.err.println("IOException occurred reading file '" + filename + "'");
+			System.err.println("IOException occurred reading file '" + path.toAbsolutePath() + "'");
 			e.printStackTrace();
 		}
 
@@ -85,8 +94,6 @@ final class Track {
 	Polyline asShape() { return polyline; }
 
 	private Track(final List<Point> points) {
-		if (points.size() % 2 != 0)
-			throw new IllegalArgumentException("points must have even number of elements");
 
 		// setup polyline
 		final List<Double> trackPoints = polyline.getPoints();

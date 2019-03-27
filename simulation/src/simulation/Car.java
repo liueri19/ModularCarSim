@@ -31,20 +31,9 @@ final class Car {
 	Rectangle asShape() { return DISPLAY; }
 
 
-	private volatile double x, y;
-	// heading is in radians, increasing counter-clockwise, 0 facing right.
-	private volatile double velocity, heading;
-
-	private volatile boolean isAccelerating, isDecelerating, isBraking, isTurningLeft, isTurningRight;
-	/*
-	Accelerating:	car speed increasing;
-	Decelerating:	car speed decreasing at the same rate as accelerating;
-	Braking:		car speed approaches 0 at a higher rate than acceleration;
-	Turning:		changes heading by a constant each update.
-	 */
-
-
-	// sensors used for range finding
+	/* ****************************************
+	Range finder implementation
+	******************************************/
 	/**
 	 * The angles in radians at which the sensors point relative to the direction of this
 	 * Car.
@@ -164,6 +153,22 @@ final class Car {
 				       .collect(Collectors.toList());
 	}
 
+
+	/* ****************************************
+	Car internal position and stuff
+	 ******************************************/
+
+	private volatile double x, y;
+	// heading is in radians, increasing counter-clockwise, 0 facing right.
+	private volatile double velocity, heading;
+
+	private volatile boolean isAccelerating, isDecelerating, isBraking, isTurningLeft, isTurningRight;
+	/*
+	Accelerating:	car speed increasing;
+	Decelerating:	car speed decreasing at the same rate as accelerating;
+	Braking:		car speed approaches 0 at a higher rate than acceleration;
+	Turning:		changes heading by a constant each update.
+	 */
 
 	/**
 	 * Creates a Car at the specified location with default fill of {@link Color#DARKGREY}.

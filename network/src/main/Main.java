@@ -3,10 +3,8 @@ package main;
 import network.Network;
 import service.Evaluator;
 import service.Evolver;
+import util.ConfigLoader;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 
 public final class Main {
@@ -32,7 +30,8 @@ public final class Main {
 			throw new RuntimeException("No Evolver service found");
 		});
 
-		final Properties config = loadConfig(args[0]);
+		ConfigLoader.loadConfig(args[0]);
+		final Properties config = ConfigLoader.getConfig();
 
 
 		// number of networks in each generation
@@ -68,20 +67,5 @@ public final class Main {
 		} while (bestFitness < minFitness);
 
 		// TODO find champ
-	}
-
-
-	private static Properties loadConfig(String file) {
-		final Properties config = new Properties();
-
-		try {
-			config.load(Files.newInputStream(Paths.get(file)));
-		}
-		catch (IOException e) {
-			System.err.println("Failed to read config file '" + file + "'");
-			e.printStackTrace();
-		}
-
-		return config;
 	}
 }

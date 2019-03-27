@@ -7,10 +7,8 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 import network.Network;
+import util.ConfigLoader;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -19,7 +17,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class World extends Application {
 	private static final int WIDTH = 1280, HEIGHT = 720;
-	private static final double START_X = WIDTH / 2d, START_Y = HEIGHT / 2d;
+	private static final double START_X = 0, START_Y = 0;
 
 	/** Controls the termination of the simulation thread. */
 	private volatile boolean done = false;
@@ -34,14 +32,19 @@ public final class World extends Application {
 
 
 	// singleton
-	private static World world;
-	static World getWorld() { return world; }
+	private volatile static World world;
+	static World getWorld() {
+		while (world == null)
+			Thread.onSpinWait();
+
+		return world;
+	}
 
 	// number of updates consumed in this simulation run
 	private final AtomicLong opsCount = new AtomicLong();
 
 
-	private final Track track = Track.load(loadConfig("carsim.properties").getProperty("track"));
+	private final Track track = Track.load(ConfigLoader.getConfig().getProperty("track"));
 
 	/** Each driver controls a car. */
 	private final List<Driver> drivers = new ArrayList<>();
@@ -49,12 +52,18 @@ public final class World extends Application {
 	/** No conceptual significance, purely for implementation convenience. */
 	private final Map<Car, Driver> carToDrivers = new HashMap<>();
 
+	/**
+	 * Constructs a new Driver and Car for the specified Network and adds them to this
+	 * World for evaluation and graphics.
+	 */
 	void addDriver(final Network network) {
 		final Car car = new Car(START_X, START_Y);
 		final Driver driver = new Driver(track, car, network);
 
 		drivers.add(driver);
 		carToDrivers.put(car, driver);
+		// add to display
+		root.getChildren().add(car.asShape());
 	}
 	void addDrivers(final Collection<? extends Network> networks) {
 		networks.forEach(this::addDriver);
@@ -112,6 +121,7 @@ public final class World extends Application {
 
 	/** Resets the operation counter and remove all drivers. */
 	synchronized void reset() {
+		done = false;
 		opsCount.set(0);
 		drivers.clear();
 		carToDrivers.clear();
@@ -153,7 +163,11 @@ public final class World extends Application {
 
 
 	/** Debug and used by SimEvaluator to launch JavaFX. */
-	public static void main(String... args) { launch(args); }
+	public static void main(String... args) {
+		final var thread = new Thread(() -> launch(args));
+		thread.setName("WorldGraphics");    // for debug
+		thread.start();
+	}
 
 	/** Sets up quit keys and debugging controls */
     private void setUpKeyHandlers(Scene scene) {
@@ -202,20 +216,5 @@ public final class World extends Application {
 //				}
 //			}
 		});
-	}
-
-
-	private static Properties loadConfig(String file) {
-		final Properties config = new Properties();
-
-		try {
-			config.load(Files.newInputStream(Paths.get(file)));
-		}
-		catch (IOException e) {
-			System.err.println("Failed to read config file '" + file + "'");
-			e.printStackTrace();
-		}
-
-		return config;
 	}
 }

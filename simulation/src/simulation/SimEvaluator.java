@@ -30,8 +30,6 @@ public final class SimEvaluator implements Evaluator {
 		}
 
 		World world = World.getWorld();
-		while (world == null)	// spin wait for non-null value
-			world = World.getWorld();
 
 		world.addDriver(network);
 
@@ -62,8 +60,6 @@ public final class SimEvaluator implements Evaluator {
 		}
 
 		World world = World.getWorld();
-		while (world == null)	// spin wait for non-null value
-			world = World.getWorld();
 
 		world.addDrivers(networks);
 
