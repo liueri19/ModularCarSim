@@ -89,14 +89,14 @@ public final class SimEvaluator implements Evaluator {
 	 * operations.
 	 */
 	static double evaluateDriver(final Driver driver) {
-		final double completion = driver.getCompletion();
+		final double distance = driver.getDistance();
 		final double operations = driver.getOperations();
 
-		if (completion < 0)
-			throw new IllegalArgumentException("Uninitialized completion in Driver instance " + driver);
+		if (distance < 0)
+			throw new IllegalArgumentException("Uninitialized distance in Driver instance " + driver);
 		if (operations < 0)
 			throw new IllegalArgumentException("Uninitialized operations in Driver instance " + driver);
 
-		return completion * completion * 1E7 - operations;
+		return distance * distance - operations;
 	}
 }

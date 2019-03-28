@@ -16,10 +16,10 @@ final class Car {
 	 * This is the acceleration constant used when {@link #isAccelerating} or
 	 * {@link #isDecelerating} is true.
 	 */
-	private static final double ACCELERATION = 0.05;
+	private static final double ACCELERATION = 0.1;
 
-	/** Amount of decrease in velocity when braking. */
-	private static final double DECELERATION = 0.1;	//may be changed to be different from acceleration
+	/** Amount of decrease in speed when braking. */
+	private static final double DECELERATION = 0.25;	//may be changed to be different from acceleration
 
 	/** In radians. */
 	private static final double TURN_AMOUNT = Math.PI / 180;
@@ -159,8 +159,12 @@ final class Car {
 	 ******************************************/
 
 	private volatile double x, y;
-	// heading is in radians, increasing counter-clockwise, 0 facing right.
-	private volatile double velocity, heading;
+	/** heading is in radians, increasing counter-clockwise, 0 facing right. */
+	private volatile double speed, heading;
+
+	/** Total distance traveled. */
+	private volatile double odometer;
+	double getDistance() { return odometer; }
 
 	private volatile boolean isAccelerating, isDecelerating, isBraking, isTurningLeft, isTurningRight;
 	/*
@@ -171,10 +175,10 @@ final class Car {
 	 */
 
 	/**
-	 * Creates a Car at the specified location with default fill of {@link Color#DARKGREY}.
+	 * Creates a Car at (0, 0) with default fill of half grey with 0.5 opacity.
 	 */
-	Car(double x, double y) {
-		this(x, y, Color.DARKGREY);
+	Car() {
+		this(0, 0, Color.grayRgb(128, 0.5));
 	}
 
 	/**
@@ -183,10 +187,36 @@ final class Car {
 	Car(double x, double y, Color fill) {
 		this.x = x; this.y = y;
 
-		DISPLAY.setStroke(Color.BLACK);
-		DISPLAY.setFill(fill);
-		DISPLAY.setRotate(90);	// clockwise 90
+		Platform.runLater(() -> {
+			DISPLAY.setX(getX() - LENGTH/2d);
+			DISPLAY.setY(getY() - WIDTH/2d);
+			DISPLAY.setRotate(90);    // clockwise 90
+			DISPLAY.setStroke(Color.BLACK);
+			DISPLAY.setFill(fill);
+		});
 	}
+
+
+
+//	/** These are accumulated until a corresponding get method is invoked, which would
+//	 * reset the corresponding variable to 0. */
+//	private volatile double deltaX, deltaY;
+//	private final Object deltaXLock = new Object(), deltaYLock = new Object();
+//
+//	double getDeltaXAndReset() {
+//		synchronized (deltaXLock) {
+//			final var cache = deltaX;
+//			deltaX = 0;
+//			return cache;
+//		}
+//	}
+//	double getDeltaYAndReset() {
+//		synchronized (deltaYLock) {
+//			final var cache = deltaY;
+//			deltaY = 0;
+//			return cache;
+//		}
+//	}
 
 
 	/**
@@ -197,52 +227,60 @@ final class Car {
 		handleLocation();
 
 		// graphics must be run by JavaFX application thread
-		Platform.runLater(this::updateDisplay);
+//		Platform.runLater(this::updateGraphics);
 	}
 
 	private synchronized void handleLocation() {
 		if (isAccelerating())
-			velocity += ACCELERATION;
+			speed += ACCELERATION;
 		if (isDecelerating())
-			velocity -= ACCELERATION;
+			speed -= ACCELERATION;
 		if (isBraking())
 			brake();
 
-		// new location based on velocity
-		x += getVelocity() * Math.cos(Math.toRadians(getHeading()));
-		y += getVelocity() * Math.sin(Math.toRadians(getHeading()));
+		final var deltaX = getSpeed() * Math.cos(getHeading());
+		final var deltaY = getSpeed() * Math.sin(getHeading());
+
+		// new location based on speed
+		x += deltaX;    y += deltaY;
+
+		// accumulate total change in position
+//		this.deltaX += deltaX;   this.deltaY += deltaY;
+
+		// add to odometer
+		odometer += getSpeed();
 	}
 
 	private synchronized void brake() {
-		if (getVelocity() > DECELERATION)
-			velocity -= DECELERATION;
-		else if (getVelocity() < -DECELERATION)
-			velocity += DECELERATION;
+		if (getSpeed() > DECELERATION)
+			speed -= DECELERATION;
+		else if (getSpeed() < -DECELERATION)
+			speed += DECELERATION;
 		else
-			velocity = 0;
+			speed = 0;
 	}
 
 	/**
 	 * Updates the location of the display rectangle to reflect the current location of
 	 * this Car.
 	 */
-	private void updateDisplay() {
-		DISPLAY.setX(getX() - WIDTH / 2d);
-		DISPLAY.setY(getY() - LENGTH / 2d);
+	void updateGraphics() {
+		DISPLAY.setX(getX() - LENGTH / 2d);
+		DISPLAY.setY(-getY() - WIDTH / 2d);
+
+		// pi/2 offset because display has 0 facing up, car has 0 facing right.
+		// setRotate considers clockwise positive, thus the negation
+		DISPLAY.setRotate(-Math.toDegrees( Math.PI/2 + getHeading() ));
 	}
 
 
 	private synchronized void handleTurning() {
-		if (getVelocity() == 0) return;	// no speed, no turning
+		if (getSpeed() == 0) return;	// no speed, no turning
 
 		if (isTurningLeft())
 			heading += TURN_AMOUNT;
 		if (isTurningRight())
 			heading -= TURN_AMOUNT;
-
-		// pi/2 offset because display has 0 facing up, car has 0 facing right.
-		// setRotate considers clockwise positive, thus the negation
-		DISPLAY.setRotate(-Math.toDegrees( Math.PI/2 + getHeading() ));
 	}
 
 
@@ -276,6 +314,6 @@ final class Car {
 	double getX() { return x; }
 	double getY() { return y; }
 
-	double getVelocity() { return velocity; }
+	double getSpeed() { return speed; }
 	double getHeading() { return heading; }
 }

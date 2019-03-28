@@ -14,9 +14,12 @@ final class Driver implements Comparable<Driver> {
 
 	/** number of operations the network used */
 	private volatile long operations = -1;
-	/** degree of completion; a number from 0 to 1 describing how much of the track was
-	 * completed */
-	private volatile double completion = -1;
+//	/** degree of completion; a number from 0 to 1 describing how much of the track was
+//	 * completed */
+//	private volatile double completion = -1;
+	// completion is way too difficult to implement
+	/** Total distance traveled. */
+	private volatile double distance = 0;
 
 	/** A cached result of {@link SimEvaluator#evaluateDriver} */
 	private volatile double eval = -1;
@@ -37,14 +40,18 @@ final class Driver implements Comparable<Driver> {
 		this.operations = operations;
 	}
 
-	synchronized void setCompletion(double completion) {
-		this.completion = completion;
+//	synchronized void setCompletion(double completion) {
+//		this.completion = completion;
+//	}
+	synchronized void setDistance(double distance) {
+		this.distance = distance;
 	}
 
 	Track getTrack() { return track; }
 	Network getNetwork() { return network; }
 	Car getCar() { return car; }
-	double getCompletion() { return completion; }
+//	double getCompletion() { return completion; }
+	double getDistance() { return distance; }
 	long getOperations() { return operations; }
 
 	synchronized double getEvaluation() {
@@ -65,6 +72,9 @@ final class Driver implements Comparable<Driver> {
 	******************************************/
 
 	void drive() {
+		// mainly for debug compatibility
+		if (network == null) return;
+
 		// get response from network
 		final var inputs = car.getRangeReadingsAsList(track.getEdges());
 		final var outputs = network.compute(inputs);
