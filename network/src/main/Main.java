@@ -6,10 +6,40 @@ import service.Evolver;
 import util.ConfigLoader;
 
 import java.util.*;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public final class Main {
 
+	// root logger settings
+	static {
+		// done with VM option
+//		// formats log messages
+//		System.setProperty(
+//				"java.util.logging.SimpleFormatter.format",
+//				"[%1$TFT%1$TT.%1$TL] %2$s %4$s: %5$s%6$s%n");
+		// disable root logger, let sub loggers handle individually
+		final var PARENT = Logger.getLogger("");
+		PARENT.setLevel(Level.OFF);
+		for (final var handler : PARENT.getHandlers()) {
+			PARENT.removeHandler(handler);
+		}
+	}
+
+
+	// class logger
+	private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+	static {
+		LOGGER.setLevel(Level.ALL);
+		final var STDERR = new ConsoleHandler();
+		STDERR.setLevel(Level.ALL);
+		LOGGER.addHandler(STDERR);
+	}
+
+
 	public static void main(String... args) {
+
 		/*
 		argument list:
 			path to config file
@@ -29,6 +59,9 @@ public final class Main {
 		final Evolver evolver = evolvers.findFirst().orElseThrow(() -> {
 			throw new RuntimeException("No Evolver service found");
 		});
+
+		LOGGER.info("Evaluator: " + evaluator);
+		LOGGER.info("Evolver:   " + evolver);
 
 		ConfigLoader.loadConfig(args[0]);
 		final Properties config = ConfigLoader.getConfig();

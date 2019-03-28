@@ -12,7 +12,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import logging.Logger;
 import network.Network;
 import util.ConfigLoader;
 
@@ -20,21 +19,29 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The world where the car will be running around in.
  */
 public final class World extends Application {
 
+	private static final Logger LOGGER = Logger.getLogger(World.class.getName());
+	static {
+		LOGGER.setLevel(Level.ALL);
+		final var STDERR = new ConsoleHandler();
+		STDERR.setLevel(Level.ALL);
+		LOGGER.addHandler(STDERR);
+	}
+
+
 	/** A manually controlled car for debug */
 	private final Car debugCar = new Car(0, 0, Color.rgb(0, 255, 0, 0.5));
 	/** debug flag. if true, debugCar will be displayed. */
 	private volatile boolean debug =
 			Boolean.parseBoolean(ConfigLoader.getConfig().getProperty("debug"));
-
-	private final Logger LOGGER =
-			new Logger(System.out);
-//			new Logger("sim_" + LocalDateTime.now() + ".log");
 
 
 
@@ -138,10 +145,14 @@ public final class World extends Application {
 					final Car car = entry.getKey();
 					final Driver driver = entry.getValue();
 
-					LOGGER.logf("%s: (%f. %f)%n", car, car.getX(), car.getY());
+					LOGGER.fine(
+							String.format("%s: (%f. %f)", car, car.getX(), car.getY())
+					);
 					if (!crashStatus.get(car)) {
 						// drove out of the track
-						LOGGER.logf("CRASH: %s at (%f. %f)%n", car, car.getX(), car.getY());
+						LOGGER.fine(
+								String.format("CRASH: %s at (%f. %f)", car, car.getX(), car.getY())
+						);
 						// TODO uncomment this after network stuff is implemented
 //						driver.setDistance(driver.getCar().getDistance());
 //						driver.setOperations(opsCount.get());

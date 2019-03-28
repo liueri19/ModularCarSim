@@ -9,4 +9,6 @@ module carsim.network {
 
 	uses Evaluator;
 	uses Evolver;
+
+	requires java.logging;
 }
