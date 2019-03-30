@@ -1,5 +1,6 @@
 package simpleevolver;
 
+import logging.Logger;
 import service.Evolver;
 import network.Network;
 import network.Node;
@@ -56,10 +57,11 @@ public final class SimpleEvolver implements Evolver {
 		for (Node input : network.getInputs()) {
 			for (Node output : network.getOutputs()) {
 				final boolean doConnect = random.nextBoolean();
-				final double weight = random.nextDouble();
 
-				if (doConnect)
+				if (doConnect) {
+					final double weight = random.nextDouble();
 					network.connect(input, output, weight);
+				}
 			}
 		}
 
@@ -68,15 +70,15 @@ public final class SimpleEvolver implements Evolver {
 
 
 	/**
-	 * Removes Networks with insufficient fitness, then multiply the survivors adding
-	 * random mutations.
+	 * Removes the bottom portion of the population as specified by harshness, then
+	 * multiply the survivors by adding random mutations.
 	 * @param harshness ratio of number of networks to be eliminated
 	 */
 	@Override
 	public Collection<Network> nextGeneration(
-			Map<? extends Network, ? extends Double> prevGenToFitness,
-			int nextGenSize,
-			double harshness) {
+			final Map<? extends Network, ? extends Double> prevGenToFitness,
+			final int nextGenSize,
+			final double harshness) {
 		if (nextGenSize < 0)
 			throw new IllegalArgumentException("nextGenSize cannot be negative");
 		if (harshness < 0 || harshness > 1)
@@ -103,12 +105,17 @@ public final class SimpleEvolver implements Evolver {
 		// generate new networks
 		final List<Network> nextGen = new ArrayList<>(survivors);
 		while (nextGen.size() < nextGenSize) {
-			final Network randomNetwork = survivors.get(random.nextInt(survivors.size()));
+			final Network survivor = survivors.get(random.nextInt(survivors.size()));
+
+			// clone survivor
+			final Network clone = survivor.copy();
 
 			if (random.nextBoolean())
-				nextGen.add(randomlyAddNode(randomNetwork));
-			else
-				nextGen.add(randomlyAddConnection(randomNetwork));
+				randomlyAddConnection(clone);
+			if (random.nextBoolean())
+				randomlyAddNode(clone);
+
+			nextGen.add(clone);
 		}
 
 
@@ -119,19 +126,54 @@ public final class SimpleEvolver implements Evolver {
 
 	/**
 	 * Randomly adds a Node to a copy of the specified Network.
-	 * The original network is not modified.
 	 */
-	private Network randomlyAddNode(Network network) {
-		// TODO implement this
-		return null;
+	private void randomlyAddNode(Network network) {
+		// prepare connections, size of that, and a random connection to add Node to
+		final var connections = network.getConnections();
+		final var size = connections.size();
+		if (size == 0) return;
+
+		final var target = random.nextInt(size);
+
+		// does not support indexed access, iterate elements to skip to target
+		final var it = connections.iterator();
+		for (int i = 0; i < target; i++) it.next();
+
+		network.addNode(it.next());
 	}
 
 	/**
 	 * Randomly adds a Connection to a copy of the specified Network.
-	 * The original network is not modified.
 	 */
-	private Network randomlyAddConnection(Network network) {
-		// TODO implement this
-		return null;
+	private void randomlyAddConnection(Network network) {
+		// options to randomly select from
+		final var froms = new ArrayList<Node<?>>();
+		froms.addAll(network.getInputs());
+		froms.addAll(network.getHiddens());
+
+		final var tos = new ArrayList<Node<?>>();
+		tos.addAll(network.getHiddens());
+		tos.addAll(network.getOutputs());
+
+		while (!froms.isEmpty() && !tos.isEmpty()) {
+			// a random connection
+			final int fromIndex = random.nextInt(froms.size());
+			final var from = froms.remove(fromIndex);
+			final int toIndex = random.nextInt(tos.size());
+			final var to = tos.remove(toIndex);
+
+			// avoid cycle
+			// Find a path to -> from. If path exist, a cycle would be introduced by adding
+			// the connection from -> to.
+			final boolean pathExists = network.findPath(to, from);
+			network.leaveAll();
+			if (!pathExists) {
+				network.connect(from, to, random.nextDouble());
+				break;
+			}
+		}
+
+		Logger.logln("Options depleted when trying to add random Connection");
+
 	}
 }

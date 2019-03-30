@@ -27,10 +27,7 @@ public class NodeBuilder {
 		type = nodeType;
 	}
 
-	public long getId() {
-		return id;
-	}
-
+	public long getId() { return id; }
 	public NodeBuilder setId(long id) {
 		this.id = id;
 		return this;
@@ -39,8 +36,7 @@ public class NodeBuilder {
 	public Collection<Connection> getInputs() {
 		return prevConnections;
 	}
-
-	public NodeBuilder setPrevConnections(Collection<Connection> prevConnections) {
+	public NodeBuilder setInputs(Collection<Connection> prevConnections) {
 		this.prevConnections = prevConnections;
 		return this;
 	}
@@ -48,8 +44,7 @@ public class NodeBuilder {
 	public Collection<Connection> getOutputs() {
 		return nextConnections;
 	}
-
-	public NodeBuilder setNextConnections(Collection<Connection> nextConnections) {
+	public NodeBuilder setOutputs(Collection<Connection> nextConnections) {
 		this.nextConnections = nextConnections;
 		return this;
 	}
@@ -57,7 +52,6 @@ public class NodeBuilder {
 	public DoubleUnaryOperator getActivationFunction() {
 		return actFunc;
 	}
-
 	public NodeBuilder setActivationFunction(DoubleUnaryOperator actFunc) {
 		this.actFunc = actFunc;
 		return this;
@@ -82,10 +76,19 @@ public class NodeBuilder {
 	 * @return	a Node with the specified parameters
 	 */
 	public Node build() {
-		if (type == null) throw new IllegalStateException("AbstractNode type must be specified");
+		if (type == null) throw new IllegalStateException("NodeType must be specified");
 		if (id < 0) id = getNextNodeID();
 		if (prevConnections == null) prevConnections = new ArrayList<>();
 		if (nextConnections == null) nextConnections = new ArrayList<>();
+
+//		/*
+//		find the node with the largest layer number among incoming connections and add 1
+//		for layer number of this node.
+//		 */
+//		final int layer = prevConnections.stream()
+//				                  .map(Connection::getPrevNode)
+//				                  .mapToInt(Node::getLayer)
+//				                  .max().orElse(0) + 1;
 
 		switch (type) {
 			case INPUT:

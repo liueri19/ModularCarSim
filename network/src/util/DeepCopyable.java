@@ -1,14 +1,16 @@
 package util;
 
+import logging.Logger;
+
 import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Objects;
 
 /**
  * DeepCopyable objects can be deep cloned.
- * This interface does not provide a copy method. Implementations of this method must
- * provide a copy constructor that takes the original object, the IdentityHashMap that
- * stores the clones, and the IdentityHashSet that stores the object currently being
+ * Implementations of this interface are expected to produce objects with no reference
+ * to original objects, direct or indirect, through the use of the IdentityHashMap that
+ * stores the clones and the IdentityHashSet that stores the object currently being
  * cloned.
  */
 public interface DeepCopyable<T> {
@@ -35,21 +37,27 @@ public interface DeepCopyable<T> {
 	void fixNulls(T original, IdentityHashMap<Object, Object> clones);
 
 
+	/**
+	 * Removes all null elements in the cloned collection and add cloned counter part of
+	 * missing objects from clonesMap map to the cloned collection. An object is
+	 * considered missing if it is present in the original but not in cloned.
+	 */
 	static <T extends DeepCopyable<T>> void fixCollection(
-			Collection<T> original, Collection<T> clone,
-			IdentityHashMap<Object, Object> clones) {
-		clone.removeIf(Objects::isNull);
+			Collection<? extends T> original,
+			Collection<? super T> cloned,
+			IdentityHashMap<Object, Object> clonesMap) {
+		cloned.removeIf(Objects::isNull);
 		for (T e : original) {
-			if (!clone.contains(e))
-				clone.add(e.copy(clones, new IdentityHashSet<>()));
+			if (!cloned.contains(e))
+				cloned.add(e.copy(clonesMap, new IdentityHashSet<>()));
 		}
 
 		// DEBUG
-		if (original.size() != clone.size()) {
-			System.out.println("DEBUG: clone and original collections have unequal sizes");
-			System.out.printf("DEBUG: clone: %s%n", clone);
-			System.out.printf("DEBUG: original: %s%n", original);
-			System.out.printf("DEBUG: clones: %s%n", clones);
+		if (original.size() != cloned.size()) {
+			Logger.logln("original and clone have unequal sizes");
+			Logger.logf("cloned: %s%n", cloned);
+			Logger.logf("original: %s%n", original);
+			Logger.logf("clonesMap: %s%n", clonesMap);
 		}
 	}
 }

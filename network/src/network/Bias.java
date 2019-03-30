@@ -5,7 +5,7 @@ import java.util.Collection;
 /**
  * Represents a bias node.
  */
-public final class Bias extends ExitOnlyNode {
+public final class Bias extends ExitOnlyNode<Bias> {
 
 	private final long id;
 	private final double value;

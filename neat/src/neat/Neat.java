@@ -50,8 +50,8 @@ public final class Neat implements Evolver {
 //		else
 //			fittest = this.getFitness() > other.getFitness() ? this : other;
 
-		final Map<Long, Connection> connects1 = parent1.getConnections();
-		final Map<Long, Connection> connects2 = parent2.getConnections();
+		final Map<Long, Connection> connects1 = parent1.getInnovNumToConnections();
+		final Map<Long, Connection> connects2 = parent2.getInnovNumToConnections();
 
 
 		final List<Long> innovNums1 = new ArrayList<>(connects1.keySet());

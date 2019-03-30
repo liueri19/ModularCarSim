@@ -23,7 +23,7 @@ public class Network implements DeepCopyable<Network> {
 
 	// cloning
 
-	protected Network(
+	private Network(
 			Network original,
 			IdentityHashMap<Object, Object> clones,
 			IdentityHashSet<Object> cloning) {
@@ -42,7 +42,9 @@ public class Network implements DeepCopyable<Network> {
 
 
 	@Override
-	public Network copy(IdentityHashMap<Object, Object> clones, IdentityHashSet<Object> cloning) {
+	public Network copy(
+			IdentityHashMap<Object, Object> clones,
+			IdentityHashSet<Object> cloning) {
 		cloning.add(this);
 
 		final Network clone;
@@ -64,15 +66,14 @@ public class Network implements DeepCopyable<Network> {
 		// TODO fix maps maybe?
 	}
 
-	////
-
 
 
 	/**
 	 * Constructs a Network with the specified number of input Nodes and output Nodes.
 	 * @param numInputs		number of input Nodes in this Network
 	 * @param numOutputs	number of output Nodes in this Network
-	 * @param activationFunction	the activation function to be used by the output nodes
+	 * @param activationFunction	the activation function to be used by the output nodes,
+	 *                              this function must be stateless
 	 */
 	public Network(int numInputs, int numOutputs, DoubleUnaryOperator activationFunction) {
 		for (int i = 0; i < numInputs; i++)
@@ -134,14 +135,18 @@ public class Network implements DeepCopyable<Network> {
 		node.discardCache();
 
 		// recursion ends when node has no input connections
-		for (Connection connection : node.getInputs())
-			recursivelyDiscardCache(connection.getPrevNode());
+		for (Connection connection : node.getInputs()) {
+			final var prevNode = connection.getPrevNode();
+			// if the node has cache discarded, the tree with that node as root has been visited.
+			if (prevNode.isCached())
+				recursivelyDiscardCache(prevNode);
+		}
 	}
 
 
 
 	/** Finds a Node in this Network of the same NodeType and the same ID. */
-	private <N extends Node> N findNode(N node) {
+	public <N extends Node> N findNode(N node) {
 
 		List<? extends Node> searchSpace = null;
 
@@ -172,8 +177,8 @@ public class Network implements DeepCopyable<Network> {
 
 
 	/**
-	 * Puts the specified AbstractNode into this network. Returns true if the operation
-	 * succeeded. If this network already contains the specified AbstractNode, the operation fails
+	 * Puts the specified Node into this network. Returns true if the operation
+	 * succeeded. If this network already contains the specified Node, the operation fails
 	 * and returns false.
 	 * Note that this is not the "add node" mutation.
 	 */
@@ -215,8 +220,12 @@ public class Network implements DeepCopyable<Network> {
 //		endNodes.add(prevNode); endNodes.add(nextNode);
 
 		boolean nodeChanged = false;
+
+		// try put the node in the network
 		if (!putNode(prevNode)) {
+			// rejected, node already in network, get reference to that
 			prevNode = findNode(prevNode);
+			// mark connection for update
 			nodeChanged = true;
 		}
 		if (!putNode(nextNode)) {
@@ -226,12 +235,11 @@ public class Network implements DeepCopyable<Network> {
 
 
 		if (nodeChanged) {	//need to modify connection
-			connection =
-					new Connection(
-							connection.getInnovationNumber(),
-							connection.getWeight(),
-							prevNode, nextNode
-					);
+			connection = new Connection(
+					connection.getInnovationNumber(),
+					connection.getWeight(),
+					prevNode, nextNode
+			);
 		}
 
 
@@ -253,16 +261,46 @@ public class Network implements DeepCopyable<Network> {
 	//NE related
 
 	/**
-	 * Connects an existing AbstractNode to another existing AbstractNode, making a new Connection.
-	 * This is the "add connection" mutation.
+	 * Tries to connect the specified Nodes in this Network. This method attempts the
+	 * "add connection" mutation.
+	 * @return  true if the connection can be made; false if the connection would result
+	 * in a cycle
 	 */
-	public void connect(Node from, Node to, double weight) {
+	public boolean tryConnect(Node<?> from, Node<?> to, double weight) {
 		from = findNode(from);
 		to = findNode(to);
 
 		if (from == null || to == null)
 			throw new IllegalArgumentException("End node is not in this network");
 
+		// check for cycle
+		/*
+		given nodes u and v, if a directed path from v to u exists, adding the edge from
+		u to v will produce a cycle.
+		https://stackoverflow.com/a/20298238
+		 */
+		// starting at 'to', try to reach 'from'
+		if (findPath(to, from))
+			return false;
+
+		// clear visited flag
+		leaveAll();
+
+		// connection can be made
+		connect(from, to, weight);
+
+		return true;
+	}
+
+	/**
+	 * Adds a Connection to this Network with the specified end Nodes and the specified
+	 * weight. This is the "add connection" mutation.
+	 * This methods does not perform validation. The argument Nodes must be references to
+	 * existing Nodes in this Network.
+	 * @see #tryConnect(Node, Node, double)
+	 * @see #findNode(Node)
+	 */
+	public void connect(Node<?> from, Node<?> to, double weight) {
 		Connection c =
 				new Connection(Connection.getNextGlobalInnovationNum(), weight, from, to);
 
@@ -270,9 +308,48 @@ public class Network implements DeepCopyable<Network> {
 	}
 
 	/**
-	 * Splits an existing connection into 2 new connections, inserting a new AbstractNode in
+	 * Recursively visits all outputs of the root Node to find the target. This method is
+	 * used to prevent cycles in the Network. This method sets the visited flag on Nodes
+	 * upon visit, which should be reset (e.g. {@link #leaveAll()}) after each invocation
+	 * of this method.
+	 * This method should not be concurrently called on overlapping sets of Node graphs.
+	 * This method is not related to {@link #findNode(Node)}.
+	 * @return  true if a path from root to target exist
+	 * @see #leaveAll()
+	 */
+	public boolean findPath(final Node<?> root, final Node<?> target) {
+		if (root == target) return true;
+
+		// visit node
+		root.visit();
+
+		// for every output
+		for (final var connection : root.getOutputs()) {
+			final var nextNode = connection.getNextNode();
+
+			// otherwise, recursively search unless already searched
+			if (!nextNode.isVisited()) {
+				// return only if found, otherwise continue for loop
+				if (findPath(nextNode, target))
+					return true;
+			}
+		}
+
+		return false;
+	}
+
+	/** Clears the visited flag for all Nodes in this Network. */
+	public void leaveAll() {
+		inputs.forEach(Node::leave);
+		outputs.forEach(Node::leave);
+		hiddens.values().forEach(Node::leave);
+	}
+
+
+	/**
+	 * Splits an existing connection into 2 new connections, inserting a new Node in
 	 * between. This is the "add node" mutation.
-	 * The incoming connection of the new AbstractNode will have the same weight as the old
+	 * The incoming connection of the new Node will have the same weight as the old
 	 * connection.
 	 * @param connection	The Connection to place the new AbstractNode on
 	 */
@@ -305,17 +382,19 @@ public class Network implements DeepCopyable<Network> {
 		newNode.addInput(connection1);
 		newNode.addOutput(connection2);
 
-		getHiddens().put(newNode.getId(), newNode);
-		getConnections().put(connection1.getInnovationNumber(), connection1);
-		getConnections().put(connection2.getInnovationNumber(), connection2);
+		hiddens.put(newNode.getId(), newNode);
+		connections.put(connection1.getInnovationNumber(), connection1);
+		connections.put(connection2.getInnovationNumber(), connection2);
 	}
 
 
 	//////////////////////////////
 	//basic getters - nothing interesting past this point
 
-	public Map<Long, HiddenNode> getHiddens() { return hiddens; }
+	public Map<Long, HiddenNode> getIDToHiddens() { return hiddens; }
+	public Collection<HiddenNode> getHiddens() { return hiddens.values(); }
 	public List<InputNode> getInputs() { return inputs; }
 	public List<OutputNode> getOutputs() { return outputs; }
-	public Map<Long, Connection> getConnections() { return connections; }
+	public Map<Long, Connection> getInnovNumToConnections() { return connections; }
+	public Collection<Connection> getConnections() { return connections.values(); }
 }

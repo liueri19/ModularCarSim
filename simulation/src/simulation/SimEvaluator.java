@@ -78,9 +78,9 @@ public final class SimEvaluator implements Evaluator {
 		return drivers.stream()
 				       .sorted(driverComparator.reversed())
 				       .map(driver -> Map.entry(driver.getNetwork(), driver.getEvaluation()))
-				       .collect(HashMap::new,
+				       .collect(LinkedHashMap::new,     // LinkedHashMap preserves order
 						       (map, entry) -> map.put(entry.getKey(), entry.getValue()),
-						       HashMap::putAll);
+						       LinkedHashMap::putAll);
 	}
 
 

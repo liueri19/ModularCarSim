@@ -6,7 +6,8 @@ module carsim.simulation {
 	exports simulation to javafx.graphics;
 
 	requires carsim.network;
-	requires java.logging;
 
 	provides Evaluator with simulation.SimEvaluator;
+
+	requires util.simple.logging;
 }

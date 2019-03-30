@@ -10,13 +10,19 @@ import java.util.Iterator;
  * @param <E>	the type of elements maintained by this set
  */
 public class IdentityHashSet<E> extends AbstractSet<E> {
-	private final IdentityHashMap<E, E> map = new IdentityHashMap<>();
+	/*
+	This implementation basically copies that of HashSet, replacing usages of HashMap
+	with IdentityHashMap and skipping a few methods for unused features (e.g. Serialization).
+	 */
+
+	private final IdentityHashMap<E, Object> map = new IdentityHashMap<>();
+
+	// dummy object as value
+	private static final Object OBJECT = new Object();
 
 	public IdentityHashSet() {}
 
-	public IdentityHashSet(Collection<? extends E> source) {
-		for (E e : source) map.put(e, e);
-	}
+	public IdentityHashSet(Collection<? extends E> source) { addAll(source); }
 
 	@Override
 	public Iterator<E> iterator() {
@@ -27,13 +33,25 @@ public class IdentityHashSet<E> extends AbstractSet<E> {
 	public int size() { return map.size(); }
 
 	@Override
-	public boolean add(E e) {
-		map.put(e, e);
-		return true;
-	}
+	public boolean isEmpty() { return map.isEmpty(); }
 
 	@Override
 	public boolean contains(Object o) {
 		return map.containsKey(o);
+	}
+
+	@Override
+	public boolean add(E e) {
+		return map.put(e, OBJECT) == null;
+	}
+
+	@Override
+	public boolean remove(Object o) {
+		return map.remove(o) == OBJECT;
+	}
+
+	@Override
+	public void clear() {
+		map.clear();
 	}
 }

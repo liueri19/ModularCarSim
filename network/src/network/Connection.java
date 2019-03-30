@@ -11,15 +11,15 @@ import java.util.concurrent.atomic.AtomicLong;
  * A connection has a weight and an innovation number.
  */
 public class Connection implements DeepCopyable<Connection> {
-	private Node prevNode;
-	private Node nextNode;
+	private Node<?> prevNode;
+	private Node<?> nextNode;
 	private double weight;
 	private long innovNum;
 
 	public Connection(long innovationNumber,
 					  double weight,
-					  Node prevNode,
-					  Node nextNode) {
+					  Node<?> prevNode,
+					  Node<?> nextNode) {
 		innovNum = innovationNumber;
 		this.weight = weight;
 		this.prevNode = prevNode;
@@ -29,7 +29,7 @@ public class Connection implements DeepCopyable<Connection> {
 	/**
 	 * Constructs a copy of the specified object, handling circular references.
 	 */
-	public Connection(
+	private Connection(
 			Connection original,
 			IdentityHashMap<Object, Object> clones,
 			IdentityHashSet<Object> cloning) {
@@ -134,7 +134,7 @@ public class Connection implements DeepCopyable<Connection> {
 	public double getWeight() { return weight; }
 	public void setWeight(double weight) { this.weight = weight; }
 
-	public Node getNextNode() { return nextNode; }
+	public Node<?> getNextNode() { return nextNode; }
 
-	public Node getPrevNode() { return prevNode; }
+	public Node<?> getPrevNode() { return prevNode; }
 }

@@ -1,44 +1,60 @@
 package main;
 
+import logging.Logger;
 import network.Network;
 import service.Evaluator;
 import service.Evolver;
 import util.ConfigLoader;
 
+import java.io.IOException;
 import java.util.*;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+//import java.util.logging.ConsoleHandler;
+//import java.util.logging.FileHandler;
+//import java.util.logging.Level;
+//import java.util.logging.Logger;
 
 public final class Main {
 
-	// root logger settings
-	static {
-		// done with VM option
-//		// formats log messages
-//		System.setProperty(
-//				"java.util.logging.SimpleFormatter.format",
-//				"[%1$TFT%1$TT.%1$TL] %2$s %4$s: %5$s%6$s%n");
-		// disable root logger, let sub loggers handle individually
-		final var PARENT = Logger.getLogger("");
-		PARENT.setLevel(Level.OFF);
-		for (final var handler : PARENT.getHandlers()) {
-			PARENT.removeHandler(handler);
-		}
-	}
+//	// root logger settings
+//	static {
+//		// done with VM option
+////		// formats log messages
+////		System.setProperty(
+////				"java.util.logging.SimpleFormatter.format",
+////				"[%1$TFT%1$TT.%1$TL] %2$s %4$s: %5$s%6$s%n");
+//
+//		// disable root logger, let sub loggers handle individually
+//		final var PARENT = Logger.getLogger("");
+//		PARENT.setLevel(Level.ALL);
+//		for (final var handler : PARENT.getHandlers()) {
+//			PARENT.removeHandler(handler);
+//		}
+//
+//		// log INFO and above
+//		try {
+//			final var logFile = new FileHandler("carsim%u.log");
+//			logFile.setLevel(Level.INFO);
+//			PARENT.addHandler(logFile);
+//		}
+//		catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//	}
 
 
-	// class logger
-	private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
-	static {
-		LOGGER.setLevel(Level.ALL);
-		final var STDERR = new ConsoleHandler();
-		STDERR.setLevel(Level.ALL);
-		LOGGER.addHandler(STDERR);
-	}
+//	// class logger
+//	private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
+//	static {
+//		LOGGER.setLevel(Level.ALL);
+//		final var STDERR = new ConsoleHandler();
+//		STDERR.setLevel(Level.ALL);
+//		LOGGER.addHandler(STDERR);
+//	}
 
 
 	public static void main(String... args) {
+
+		Logger.addOutput(System.err);
 
 		/*
 		argument list:
@@ -60,8 +76,8 @@ public final class Main {
 			throw new RuntimeException("No Evolver service found");
 		});
 
-		LOGGER.info("Evaluator: " + evaluator);
-		LOGGER.info("Evolver:   " + evolver);
+		Logger.logln("Evaluator: " + evaluator);
+		Logger.logln("Evolver:   " + evolver);
 
 		ConfigLoader.loadConfig(args[0]);
 		final Properties config = ConfigLoader.getConfig();
@@ -99,6 +115,7 @@ public final class Main {
 			population = evolver.nextGeneration(evaluatedNetworks, populationSize, harshness);
 		} while (bestFitness < minFitness);
 
-		// TODO find champ
+
+		// TODO write champ to file (implement NetworkIO)
 	}
 }

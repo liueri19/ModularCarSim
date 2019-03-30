@@ -11,12 +11,25 @@ import java.util.stream.Collectors;
  */
 public abstract class Node<N extends Node<N>> implements Comparable<Node>, DeepCopyable<N> {
 
+	/** Used in the depth first search for detecting loops. */
+	private boolean visited = false;
+	boolean isVisited() { return visited; }
+	void visit() { visited = true; }
+	/** Sets the visited flag to false. */
+	void leave() { visited = false; }
+
+
+	/** For faster equals() checks. */
 	private final long ID;
+	public long getId() { return ID; }
+
 	private final List<Connection> inputs = new ArrayList<>();
 	private final List<Connection> outputs = new ArrayList<>();
 
 
-	Node(long id, Collection<Connection> inputs, Collection<Connection> outputs) {
+	Node(final long id,
+	     Collection<Connection> inputs,
+	     Collection<Connection> outputs) {
 		ID = id;
 
 		// addAll method does not accept null argument
@@ -81,9 +94,6 @@ public abstract class Node<N extends Node<N>> implements Comparable<Node>, DeepC
 	void discardCache() { cached = false; }
 
 
-	public long getId() { return ID; }
-
-
 	boolean addInput(Connection connection) {
 		return inputs.add(connection);
 	}
@@ -101,11 +111,11 @@ public abstract class Node<N extends Node<N>> implements Comparable<Node>, DeepC
 	}
 
 	List<Connection> getInputs() {
-		return inputs;
+		return Collections.unmodifiableList(inputs);
 	}
 
 	List<Connection> getOutputs() {
-		return outputs;
+		return Collections.unmodifiableList(outputs);
 	}
 
 
@@ -137,14 +147,13 @@ public abstract class Node<N extends Node<N>> implements Comparable<Node>, DeepC
 	Node(Node<N> original,
 		 IdentityHashMap<Object, Object> clones,
 		 IdentityHashSet<Object> cloning) {
-		this(original.getId(),
+		this(original.ID,
 				original.inputs.stream()
 						.map(c -> c.copy(clones, cloning))
 						.collect(Collectors.toList()),
 				original.outputs.stream()
 						.map(c -> c.copy(clones, cloning))
-						.collect(Collectors.toList())
-		);
+						.collect(Collectors.toList()));
 
 		this.result = original.result;
 		this.cached = original.cached;
