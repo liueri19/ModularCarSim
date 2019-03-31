@@ -7,7 +7,7 @@ import network.Network;
  * instance used to control the Car, instances of this class also record the number of
  * operations used and the degree of completion achieved.
  */
-final class Driver implements Comparable<Driver> {
+class Driver implements Comparable<Driver> {
 	private final Track track;
 	private final Car car;
 	private final Network network;

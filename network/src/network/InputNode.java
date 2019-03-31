@@ -15,13 +15,6 @@ public final class InputNode extends ExitOnlyNode<InputNode> {
 		super(id, outputs);
 	}
 
-	public InputNode(InputNode original,
-					 IdentityHashMap<Object, Object> clones,
-					 IdentityHashSet<Object> cloning) {
-		super(original, clones, cloning);
-		this.value = original.value;
-	}
-
 	private double value;
 
 	void write(double value) {
@@ -30,4 +23,28 @@ public final class InputNode extends ExitOnlyNode<InputNode> {
 
 	@Override
 	double read() { return value; }
+
+
+	private InputNode(InputNode original,
+	                 IdentityHashMap<Object, Object> clones,
+	                 IdentityHashSet<Object> cloning) {
+		super(original, clones, cloning);
+		this.value = original.value;
+	}
+
+	@Override
+	public InputNode copy(
+			IdentityHashMap<Object, Object> clones,
+			IdentityHashSet<Object> cloning) {
+		cloning.add(this);
+
+		final InputNode clone;
+		if (clones.containsKey(this))
+			clone = (InputNode) clones.get(this);
+		else
+			clone = new InputNode(this, clones, cloning);
+
+		cloning.remove(this);
+		return clone;
+	}
 }

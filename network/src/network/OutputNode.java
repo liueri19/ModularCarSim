@@ -40,21 +40,29 @@ public final class OutputNode extends Node<OutputNode> {
 
 	// cloning
 
-	protected OutputNode(OutputNode original,
+	private OutputNode(OutputNode original,
 					  IdentityHashMap<Object, Object> clones,
 					  IdentityHashSet<Object> cloning) {
 		super(original, clones, cloning);
-		actFunc = original.actFunc;	// TODO clone functions?
+		actFunc = original.actFunc;
 	}
 
 	@Override
 	public OutputNode copy(IdentityHashMap<Object, Object> clones, IdentityHashSet<Object> cloning) {
-		return new OutputNode(this, clones, cloning);
+		cloning.add(this);
+
+		final OutputNode clone;
+		if (clones.containsKey(this))
+			clone = (OutputNode) clones.get(this);
+		else
+			clone = new OutputNode(this, clones, cloning);
+
+		cloning.remove(this);
+		return clone;
 	}
 
 	@Override
 	public void fixNulls(OutputNode original, IdentityHashMap<Object, Object> clones) {
 		super.fixNulls(original, clones);
-
 	}
 }

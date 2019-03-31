@@ -11,10 +11,10 @@ import java.util.concurrent.atomic.AtomicLong;
  * A connection has a weight and an innovation number.
  */
 public class Connection implements DeepCopyable<Connection> {
-	private Node<?> prevNode;
-	private Node<?> nextNode;
+	private final Node<?> prevNode;
+	private final Node<?> nextNode;
 	private double weight;
-	private long innovNum;
+	private final long innovNum;
 
 	public Connection(long innovationNumber,
 					  double weight,
@@ -26,6 +26,7 @@ public class Connection implements DeepCopyable<Connection> {
 		this.nextNode = nextNode;
 	}
 
+
 	/**
 	 * Constructs a copy of the specified object, handling circular references.
 	 */
@@ -33,25 +34,31 @@ public class Connection implements DeepCopyable<Connection> {
 			Connection original,
 			IdentityHashMap<Object, Object> clones,
 			IdentityHashSet<Object> cloning) {
-		innovNum = original.innovNum;
-		weight = original.weight;
-
-
+		this(original.innovNum, original.weight,
+				original.prevNode.copy(clones, cloning),
+				original.nextNode.copy(clones, cloning));
 	}
 
 	@Override
 	public Connection copy(IdentityHashMap<Object, Object> clones, IdentityHashSet<Object> cloning) {
 		cloning.add(this);
 
+		final Connection clone;
 		if (clones.containsKey(this))
-			return (Connection) clones.get(this);
-		return new Connection(this, clones, cloning);
+			clone = (Connection) clones.get(this);
+		else
+			clone = new Connection(this, clones, cloning);
+
+		cloning.remove(this);
+		return clone;
 	}
 
 	@Override
 	public void fixNulls(Connection connection, IdentityHashMap<Object, Object> clones) {
 		// TODO fix
 	}
+
+
 
 	/**
 	 * This method should be called by an activated ending node (nextNode). Causes this

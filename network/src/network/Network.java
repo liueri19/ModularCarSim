@@ -48,6 +48,7 @@ public class Network implements DeepCopyable<Network> {
 		cloning.add(this);
 
 		final Network clone;
+		// if this object has been cloned
 		if (clones.containsKey(this))
 			clone = (Network) clones.get(this);
 		else

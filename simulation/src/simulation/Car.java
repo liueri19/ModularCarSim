@@ -225,9 +225,6 @@ final class Car {
 	synchronized void update() {
 		handleTurning();
 		handleLocation();
-
-		// graphics must be run by JavaFX application thread
-//		Platform.runLater(this::updateGraphics);
 	}
 
 	private synchronized void handleLocation() {

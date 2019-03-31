@@ -73,14 +73,11 @@ public final class SimEvaluator implements Evaluator {
 		world.reset();
 
 		// collect results and return
-		final Comparator<Driver> driverComparator = Driver::compareTo;
-
 		return drivers.stream()
-				       .sorted(driverComparator.reversed())
 				       .map(driver -> Map.entry(driver.getNetwork(), driver.getEvaluation()))
-				       .collect(LinkedHashMap::new,     // LinkedHashMap preserves order
+				       .collect(HashMap::new,
 						       (map, entry) -> map.put(entry.getKey(), entry.getValue()),
-						       LinkedHashMap::putAll);
+						       HashMap::putAll);
 	}
 
 
@@ -92,8 +89,8 @@ public final class SimEvaluator implements Evaluator {
 		final double distance = driver.getDistance();
 		final double operations = driver.getOperations();
 
-		if (distance < 0)
-			throw new IllegalArgumentException("Uninitialized distance in Driver instance " + driver);
+//		if (distance < 0)
+//			throw new IllegalArgumentException("Uninitialized distance in Driver instance " + driver);
 		if (operations < 0)
 			throw new IllegalArgumentException("Uninitialized operations in Driver instance " + driver);
 

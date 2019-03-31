@@ -1,6 +1,9 @@
 package network;
 
+import util.IdentityHashSet;
+
 import java.util.Collection;
+import java.util.IdentityHashMap;
 import java.util.function.DoubleUnaryOperator;
 
 /**
@@ -32,5 +35,30 @@ public final class HiddenNode extends Node<HiddenNode> {
 			result = actFunc.applyAsDouble(super.read());
 		}
 		return result;
+	}
+
+
+	private HiddenNode(
+			HiddenNode original,
+			IdentityHashMap<Object, Object> clones,
+			IdentityHashSet<Object> cloning) {
+		super(original, clones, cloning);
+		this.actFunc = original.actFunc;
+	}
+
+	@Override
+	public HiddenNode copy(
+			IdentityHashMap<Object, Object> clones,
+			IdentityHashSet<Object> cloning) {
+		cloning.add(this);
+
+		final HiddenNode clone;
+		if (clones.containsKey(this))
+			clone = (HiddenNode) clones.get(this);
+		else
+			clone = new HiddenNode(this, clones, cloning);
+
+		cloning.remove(this);
+		return clone;
 	}
 }

@@ -29,6 +29,8 @@ public final class World extends Application {
 
 	/** A manually controlled car for debug */
 	private final Car debugCar = new Car(0, 0, Color.rgb(0, 255, 0, 0.5));
+	/** A dummy object for debug, designed to do nothing. */
+	private final Driver debugDriver = new DebugDriver();
 	/** debug flag. if true, debugCar will be displayed. */
 	private volatile boolean debug =
 			Boolean.parseBoolean(ConfigLoader.getConfig().getProperty("debug"));
@@ -38,10 +40,18 @@ public final class World extends Application {
 	private static final int WIDTH = 1280, HEIGHT = 720;
 	private static final double CENTER_X = WIDTH/2d, CENTER_Y = HEIGHT/2d;
 
+	/** Terminates if no Car moves for IDLE_THRESHOLD milliseconds. */
+	private static final long IDLE_THRESHOLD = 5000;
+
+
 	/** Controls the termination of the simulation thread. */
 	private volatile boolean done = false;
-	void terminate() {
+	/** Only true when terminate() method is used. Mark this World as irrecoverably terminated. */
+	private volatile boolean terminated = false;
+	/** Hard terminate, shuts down JavaFX runtime. */
+	private void terminate() {
 		done = true;
+		terminated = true;
 		getGraphicsHandler().stop();
 		stage.close();
 	}
@@ -62,13 +72,15 @@ public final class World extends Application {
 
 	private final Track TRACK = Track.load(ConfigLoader.getConfig().getProperty("track"));
 
-	/** Each driver controls a car. */
+	/**
+	 * No conceptual significance, purely for implementation convenience.
+	 * Used to both display Car graphics and fetch controls from Drivers.
+	 */
+	private final Map<Car, Driver> carToDrivers = new ConcurrentHashMap<>();
+
+	/** The list is for external use via the getter. It does not have the debug Driver. */
 	private final List<Driver> drivers = new ArrayList<>();
-
-	/** No conceptual significance, purely for implementation convenience. */
-	private final Map<Car, Driver> carToDrivers = new HashMap<>();
-
-
+	List<Driver> getDrivers() { return drivers; }
 	/**
 	 * Constructs a new Driver and Car for the specified Network and adds them to this
 	 * World for evaluation and graphics.
@@ -85,7 +97,6 @@ public final class World extends Application {
 	void addDrivers(final Collection<? extends Network> networks) {
 		networks.forEach(this::addDriver);
 	}
-	List<Driver> getDrivers() { return new ArrayList<>(drivers); }
 
 
 	/** Updated simulation thread, used by graphics thread. */
@@ -104,6 +115,9 @@ public final class World extends Application {
 
 		// run sim
 		try {
+			// for checking idle time and terminate if exceeding IDLE_THRESHOLD
+			long idleTimestamp = System.currentTimeMillis();
+
 			while (!done) {
 
 				Thread.sleep(10);
@@ -111,8 +125,8 @@ public final class World extends Application {
 				// for each car, true if car is fine, false if crashed
 				final Map<Car, Boolean> crashStatus = new ConcurrentHashMap<>();
 
-				synchronized (graphicsLock) {
-					Platform.runLater(() -> {
+				Platform.runLater(() -> {
+					synchronized (graphicsLock) {
 						for (final var car : carToDrivers.keySet()) {
 							crashStatus.put(
 									car,
@@ -120,13 +134,25 @@ public final class World extends Application {
 											.getBoundsInLocal().isEmpty()
 							);
 						}
-					});
-				}
+					}
+				});
 
 				// wait for the runLater to complete
 				while (crashStatus.size() != carToDrivers.size()) {
-					if (done)
+					// Irrecoverable termination. caused by terminate()
+					if (terminated)
 						return;
+
+					if (done) {
+					/*
+					Manually terminated. This may happen as a result of terminate() or
+					stopSimulation(). Stop waiting and assume unchecked Cars to be not
+					crashed.
+					 */
+						carToDrivers.forEach((car, v) -> crashStatus.putIfAbsent(car, true));
+						break;
+					}
+
 					Thread.onSpinWait();
 				}
 
@@ -152,7 +178,7 @@ public final class World extends Application {
 
 				// let networks do their thing
 				// TODO uncomment this after network stuff is implemented
-//				drivers.forEach(Driver::drive);
+//				carToDrivers.values().forEach(Driver::drive);
 
 				// update car position (no graphics here)
 				carToDrivers.keySet().forEach(Car::update);
@@ -160,7 +186,19 @@ public final class World extends Application {
 				leader = findBestBy(carToDrivers.keySet(), Car::getDistance);
 
 				opsCount.getAndIncrement();
+
+				// if any car is moving, reset timestamp
+				if (carToDrivers.keySet().stream().anyMatch(car -> car.getSpeed() != 0))
+					idleTimestamp = System.currentTimeMillis();
+				else
+					done = System.currentTimeMillis() - idleTimestamp >= IDLE_THRESHOLD;
 			}
+
+			// handle un-crashed cars
+			carToDrivers.forEach((k, driver) -> {
+				if (driver.getOperations() < 0)
+					driver.setOperations(opsCount.get());
+			});
 		}
 		catch (InterruptedException e) {
 			System.err.println("Simulation interrupted");
@@ -171,6 +209,9 @@ public final class World extends Application {
 
 	/** Resets the operation counter and remove all drivers. */
 	synchronized void reset() {
+		if (terminated)
+			throw new IllegalStateException("World has been irrecoverably terminated");
+
 		done = false;
 		opsCount.set(0);
 		drivers.clear();
@@ -230,7 +271,7 @@ public final class World extends Application {
 
 		// debug
 		if (debug) {
-			carToDrivers.put(debugCar, null);
+			carToDrivers.put(debugCar, debugDriver);
 			root.getChildren().add(debugCar.asShape());
 		}
 

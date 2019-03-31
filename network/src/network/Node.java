@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 /**
  * Fills in the basic stuff for implementing a Node.
  */
-public abstract class Node<N extends Node<N>> implements Comparable<Node>, DeepCopyable<N> {
+public abstract class Node<N extends Node<N>> implements Comparable<N>, DeepCopyable<N> {
 
 	/** Used in the depth first search for detecting loops. */
 	private boolean visited = false;
@@ -140,13 +140,17 @@ public abstract class Node<N extends Node<N>> implements Comparable<Node>, DeepC
 	}
 
 
+
+	// cloning
+
 	/**
 	 * Constructs a deep copy of the specified Node.
 	 * @param original	the Node to be copied
 	 */
-	Node(Node<N> original,
-		 IdentityHashMap<Object, Object> clones,
-		 IdentityHashSet<Object> cloning) {
+	protected Node(
+			Node<N> original,
+			IdentityHashMap<Object, Object> clones,
+			IdentityHashSet<Object> cloning) {
 		this(original.ID,
 				original.inputs.stream()
 						.map(c -> c.copy(clones, cloning))
@@ -155,15 +159,13 @@ public abstract class Node<N extends Node<N>> implements Comparable<Node>, DeepC
 						.map(c -> c.copy(clones, cloning))
 						.collect(Collectors.toList()));
 
+		this.visited = original.visited;
 		this.result = original.result;
 		this.cached = original.cached;
 	}
 
-	@Override
-	public N copy(IdentityHashMap<Object, Object> clones, IdentityHashSet<Object> cloning) {
-		return null;
-	}
 
+	// TODO implement fixNulls in subclasses
 	@Override
 	public void fixNulls(N original, IdentityHashMap<Object, Object> clones) {
 		DeepCopyable.fixCollection(original.getInputs(), inputs, clones);
@@ -173,7 +175,7 @@ public abstract class Node<N extends Node<N>> implements Comparable<Node>, DeepC
 
 
 /**
- * An AbstractNode that does not have any incoming Connections.
+ * An Node that does not have any incoming Connections.
  */
 abstract class ExitOnlyNode<N extends ExitOnlyNode<N>> extends Node<N> {
 	protected ExitOnlyNode(long id, Collection<Connection> outputs) {

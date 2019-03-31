@@ -106,7 +106,9 @@ public final class Main {
 
 
 		double bestFitness;
+		int generationCount = 0;
 		do {
+			Logger.logln("Generation " + ++generationCount);
 			// evaluate networks
 			final Map<Network, Double> evaluatedNetworks = evaluator.evaluate(population);
 			bestFitness = evaluatedNetworks.values().iterator().next(); // first element

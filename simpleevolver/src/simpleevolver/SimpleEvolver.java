@@ -89,15 +89,13 @@ public final class SimpleEvolver implements Evolver {
 				new ArrayList<>(prevGenToFitness.entrySet());
 		entries.sort(Comparator.comparingDouble(Map.Entry::getValue));
 
-		final List<Network> sortedNetworks = new ArrayList<>();
-		entries.forEach(entry -> sortedNetworks.add(entry.getKey()));
-
 		// eliminate
 		final long numSurvivors =
 				Math.round(prevGenToFitness.size() * (1 - harshness));
 
 		final List<Network> survivors =
-				sortedNetworks.stream()
+				entries.stream()
+						.map(Map.Entry::getKey)
 						.limit(numSurvivors)
 						.collect(Collectors.toList());
 
