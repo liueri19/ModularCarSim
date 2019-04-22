@@ -80,7 +80,7 @@ public final class World extends Application {
 
 	/** The list is for external use via the getter. It does not have the debug Driver. */
 	private final List<Driver> drivers = new ArrayList<>();
-	List<Driver> getDrivers() { return drivers; }
+	List<Driver> getDrivers() { return new ArrayList<>(drivers); }
 	/**
 	 * Constructs a new Driver and Car for the specified Network and adds them to this
 	 * World for evaluation and graphics.
@@ -168,17 +168,15 @@ public final class World extends Application {
 					if (!crashStatus.get(car)) {
 						// drove out of the track
 						Logger.logf("CRASH: %s at (%f. %f)%n", car, car.getX(), car.getY());
-						// TODO uncomment this after network stuff is implemented
-//						driver.setDistance(driver.getCar().getDistance());
-//						driver.setOperations(opsCount.get());
+						driver.setDistance(driver.getCar().getDistance());
+						driver.setOperations(opsCount.get());
 
 						it.remove();
 					}
 				}
 
 				// let networks do their thing
-				// TODO uncomment this after network stuff is implemented
-//				carToDrivers.values().forEach(Driver::drive);
+				carToDrivers.values().forEach(Driver::drive);
 
 				// update car position (no graphics here)
 				carToDrivers.keySet().forEach(Car::update);

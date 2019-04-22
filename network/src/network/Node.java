@@ -4,6 +4,7 @@ import util.DeepCopyable;
 import util.IdentityHashSet;
 
 import java.util.*;
+import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
 /**
@@ -25,6 +26,7 @@ public abstract class Node<N extends Node<N>> implements Comparable<N>, DeepCopy
 
 	private final List<Connection> inputs = new ArrayList<>();
 	private final List<Connection> outputs = new ArrayList<>();
+//	private final List<Connection> outputs = new LoggedArrayList(this);
 
 
 	Node(final long id,
@@ -33,16 +35,13 @@ public abstract class Node<N extends Node<N>> implements Comparable<N>, DeepCopy
 		ID = id;
 
 		// addAll method does not accept null argument
-		if (inputs == null) inputs = Collections.emptyList();
-		if (outputs == null) outputs = Collections.emptyList();
-
-		this.inputs.addAll(inputs);
-		this.outputs.addAll(outputs);
+		if (inputs != null) this.inputs.addAll(inputs);
+		if (outputs != null) this.outputs.addAll(outputs);
 	}
 
 
 	private double result;
-	private boolean cached = false;
+	boolean cached = false;
 	boolean isCached() { return cached; }
 
 
@@ -91,7 +90,10 @@ public abstract class Node<N extends Node<N>> implements Comparable<N>, DeepCopy
 	/**
 	 * Resets this Node by discarding the current cached value.
 	 */
-	void discardCache() { cached = false; }
+	void discardCache() {
+//		result = 0;
+		cached = false;
+	}
 
 
 	boolean addInput(Connection connection) {
@@ -111,12 +113,10 @@ public abstract class Node<N extends Node<N>> implements Comparable<N>, DeepCopy
 	}
 
 	List<Connection> getInputs() {
-		return Collections.unmodifiableList(inputs);
+		return inputs;
 	}
 
-	List<Connection> getOutputs() {
-		return Collections.unmodifiableList(outputs);
-	}
+	List<Connection> getOutputs() { return outputs; }
 
 
 	String encode() {
@@ -165,11 +165,13 @@ public abstract class Node<N extends Node<N>> implements Comparable<N>, DeepCopy
 	}
 
 
-	// TODO implement fixNulls in subclasses
 	@Override
 	public void fixNulls(N original, IdentityHashMap<Object, Object> clones) {
-		DeepCopyable.fixCollection(original.getInputs(), inputs, clones);
-		DeepCopyable.fixCollection(original.getOutputs(), outputs, clones);
+		final BiPredicate<Connection, Connection> comp =
+				(a, b) -> Long.compareUnsigned(a.getInnovationNumber(), b.getInnovationNumber()) == 0;
+
+		DeepCopyable.fixCollection(original.getInputs(), inputs, clones, comp);
+		DeepCopyable.fixCollection(original.getOutputs(), outputs, clones, comp);
 	}
 }
 
@@ -201,6 +203,6 @@ abstract class ExitOnlyNode<N extends ExitOnlyNode<N>> extends Node<N> {
 
 	@Override
 	List<Connection> getInputs() {
-		return null;
+		return Collections.emptyList();
 	}
 }

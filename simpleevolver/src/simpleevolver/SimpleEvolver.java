@@ -1,11 +1,12 @@
 package simpleevolver;
 
 import logging.Logger;
+import network.*;
 import service.Evolver;
-import network.Network;
-import network.Node;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -28,8 +29,6 @@ public final class SimpleEvolver implements Evolver {
 	/**
 	 * Provides a Collection of Networks with only input nodes and output nodes with
 	 * random connections.
-	 * @throws IllegalArgumentException	if the property 'population_size' in the supplied
-	 * properties file is not an integer.
 	 */
 	@Override
 	public Collection<Network> initPopulation(
@@ -53,15 +52,11 @@ public final class SimpleEvolver implements Evolver {
 	public Network initNetwork(int numInputs, int numOutputs) {
 		final Network network = new Network(numInputs, numOutputs, Math::tanh);
 
-		// randomly connect input to output nodes
+		// connect input to output nodes
 		for (Node input : network.getInputs()) {
 			for (Node output : network.getOutputs()) {
-				final boolean doConnect = random.nextBoolean();
-
-				if (doConnect) {
-					final double weight = random.nextDouble();
-					network.connect(input, output, weight);
-				}
+				final double weight = random.nextDouble();
+				network.connect(input, output, weight);
 			}
 		}
 
@@ -84,17 +79,20 @@ public final class SimpleEvolver implements Evolver {
 		if (harshness < 0 || harshness > 1)
 			throw new IllegalArgumentException("harshness must be between 0 and 1 inclusive");
 
-		// sort networks by fitness
 		final List<Map.Entry<? extends Network, ? extends Double>> entries =
 				new ArrayList<>(prevGenToFitness.entrySet());
-		entries.sort(Comparator.comparingDouble(Map.Entry::getValue));
 
 		// eliminate
 		final long numSurvivors =
 				Math.round(prevGenToFitness.size() * (1 - harshness));
 
+		Comparator<Double> comp = Double::compare;
+		comp = comp.reversed();
+		// sort networks by fitness
+		// also scramble the order of equal fitness networks
+		final var sortedEntries = scrambleSort(entries, Map.Entry::getValue, comp);
 		final List<Network> survivors =
-				entries.stream()
+				sortedEntries.stream()
 						.map(Map.Entry::getKey)
 						.limit(numSurvivors)
 						.collect(Collectors.toList());
@@ -108,10 +106,15 @@ public final class SimpleEvolver implements Evolver {
 			// clone survivor
 			final Network clone = survivor.copy();
 
-			if (random.nextBoolean())
-				randomlyAddConnection(clone);
-			if (random.nextBoolean())
-				randomlyAddNode(clone);
+			if(random.nextBoolean()) {
+				randomlyChangeWeight(clone);
+			}
+			else {
+				if (random.nextBoolean())
+					randomlyAddConnection(clone);
+				if (random.nextBoolean())
+					randomlyAddNode(clone);
+			}
 
 			nextGen.add(clone);
 		}
@@ -121,23 +124,62 @@ public final class SimpleEvolver implements Evolver {
 	}
 
 
+	/**
+	 * Randomly changes the weight of a single connection in the network.
+	 */
+	private void randomlyChangeWeight(Network network) {
+		// don't do anything if empty
+		final var connections = network.getConnections();
+		if (connections.size() == 0) return;
+
+		final var it = connections.iterator();
+		final int randInt = random.nextInt(connections.size());
+
+		// does not support indexed access, iterate to desired index
+		for (int i = 0; i < randInt; i++) it.next();
+		final var connection = it.next();
+
+		// random weight
+		connection.setWeight(random.nextDouble());
+	}
 
 	/**
-	 * Randomly adds a Node to a copy of the specified Network.
+	 * Randomly adds a Node to a copy of the specified Network. The new node may be
+	 * placed on an existing connection and splits the connection, or a bias node creating
+	 * a new connection.
 	 */
 	private void randomlyAddNode(Network network) {
-		// prepare connections, size of that, and a random connection to add Node to
-		final var connections = network.getConnections();
-		final var size = connections.size();
-		if (size == 0) return;
+		// add a random bias
+		if (random.nextBoolean()) {
+			final var bias =
+					new NodeBuilder(NodeType.BIAS).setValue(random.nextDouble()).build();
 
-		final var target = random.nextInt(size);
+			// random target to connect to
+			final var tos = new ArrayList<Node<?>>();
+			tos.addAll(network.getHiddens());
+			tos.addAll(network.getOutputs());
 
-		// does not support indexed access, iterate elements to skip to target
-		final var it = connections.iterator();
-		for (int i = 0; i < target; i++) it.next();
+			network.putNode(bias);
 
-		network.addNode(it.next());
+			final var target = tos.get(random.nextInt(tos.size()));
+
+			network.tryConnect(bias, target, random.nextDouble());
+		}
+		// add new node and split connection
+		else {
+			// prepare connections, size of that, and a random connection to add Node to
+			final var connections = network.getConnections();
+			final var size = connections.size();
+			if (size == 0) return;
+
+			final var target = random.nextInt(size);
+
+			// does not support indexed access, iterate elements to skip to target
+			final var it = connections.iterator();
+			for (int i = 0; i < target; i++) it.next();
+
+			network.addNode(it.next());
+		}
 	}
 
 	/**
@@ -159,19 +201,63 @@ public final class SimpleEvolver implements Evolver {
 			final var from = froms.remove(fromIndex);
 			final int toIndex = random.nextInt(tos.size());
 			final var to = tos.remove(toIndex);
+			final double weight = random.nextDouble();
 
 			// avoid cycle
 			// Find a path to -> from. If path exist, a cycle would be introduced by adding
 			// the connection from -> to.
-			final boolean pathExists = network.findPath(to, from);
-			network.leaveAll();
-			if (!pathExists) {
-				network.connect(from, to, random.nextDouble());
-				break;
+//			final boolean pathExists = network.findPath(to, from);
+//			network.leaveAll();
+//			if (!pathExists) {
+//				network.connect(from, to, random.nextDouble());
+//				return;
+//			}
+			if (network.tryConnect(from, to, weight)) {
+				return;
 			}
 		}
 
-		Logger.logln("Options depleted when trying to add random Connection");
+//		Logger.logln("Options depleted when trying to add random Connection");
+	}
 
+
+	/**
+	 * Sorts the specified List and deliberately scrambles the sections with equal
+	 * elements without breaking the sort order.
+	 * @param toKeyFunction converts elements in original to keys for the Comparator
+	 */
+	private <T, K> List<T> scrambleSort(
+			final List<? extends T> original,
+			final Function<? super T, K> toKeyFunction,
+			final Comparator<? super K> comparator) {
+		// divide into buckets based on toKeyFunction
+		final SortedMap<K, List<T>> buckets = new TreeMap<>(comparator);
+		// for every element in original
+		for (final T element : original) {
+			// computing key
+			buckets.compute(toKeyFunction.apply(element), (key, bucket) -> {
+				// if bucket for key is null, make one
+				if (bucket == null) {
+					final List<T> newBucket = new ArrayList<>();
+					newBucket.add(element);
+					return newBucket;
+				}
+				// otherwise add to existing bucket
+				else {
+					bucket.add(element);
+					return bucket;
+				}
+			});
+		}
+
+		// scramble each bucket
+//		buckets.values().forEach(Collections::shuffle);
+		for (final var list : buckets.values())
+			Collections.shuffle(list);
+
+		// combine and return
+		return buckets.values().stream()
+				       .flatMap(List::stream)
+				       .collect(Collectors.toList());
 	}
 }

@@ -111,6 +111,15 @@ final class Car {
 			if (!isBetween(obstacle.getX1(), obstacle.getX2(), interceptX))
 				continue;
 
+			// check if intercept is in the direction of the sensor
+			final int sensorQuadrant =
+					calcQuadrant(Math.cos(direction), Math.sin(direction));
+			final int interceptQuadrant =
+					calcQuadrant(interceptX, interceptY);
+			if (sensorQuadrant != interceptQuadrant)
+				continue;
+
+
 			final double distance = Math.hypot(interceptX - x, interceptY - y);
 
 			if (distance < range)
@@ -140,6 +149,13 @@ final class Car {
 		}
 
 		return value >= lower && value <= upper;
+	}
+
+	private static int calcQuadrant(final double x, final double y) {
+		if (x >= 0)
+			return y >= 0 ? 1 : 4;
+		else
+			return y >= 0 ? 2 : 3;
 	}
 
 

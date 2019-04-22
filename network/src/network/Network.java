@@ -1,5 +1,6 @@
 package network;
 
+import logging.Logger;
 import util.DeepCopyable;
 import util.IdentityHashSet;
 
@@ -16,7 +17,7 @@ public class Network implements DeepCopyable<Network> {
 	private final List<InputNode> inputs = new ArrayList<>();
 	private final List<OutputNode> outputs = new ArrayList<>();
 
-	private final SortedMap<Long, HiddenNode> hiddens = new TreeMap<>();
+	private final SortedMap<Long, Node<?>> hiddens = new TreeMap<>();
 
 	private final SortedMap<Long, Connection> connections = new TreeMap<>();
 
@@ -33,7 +34,7 @@ public class Network implements DeepCopyable<Network> {
 		for (OutputNode node : original.outputs)
 			outputs.add(node.copy(clones, cloning));
 
-		for (Map.Entry<Long, HiddenNode> entry : original.hiddens.entrySet())
+		for (var entry : original.hiddens.entrySet())
 			hiddens.put(entry.getKey(), entry.getValue().copy(clones, cloning));
 
 		for (Map.Entry<Long, Connection> entry : original.connections.entrySet())
@@ -45,6 +46,9 @@ public class Network implements DeepCopyable<Network> {
 	public Network copy(
 			IdentityHashMap<Object, Object> clones,
 			IdentityHashSet<Object> cloning) {
+		if (cloning.contains(this))
+			return null;
+
 		cloning.add(this);
 
 		final Network clone;
@@ -55,6 +59,7 @@ public class Network implements DeepCopyable<Network> {
 			clone = new Network(this, clones, cloning);
 
 		cloning.remove(this);
+		clones.put(this, clone);
 		return clone;
 	}
 
@@ -64,7 +69,29 @@ public class Network implements DeepCopyable<Network> {
 		DeepCopyable.fixCollection(original.inputs, inputs, clones);
 		DeepCopyable.fixCollection(original.outputs, outputs, clones);
 
-		// TODO fix maps maybe?
+		// for every entry in original map of hiddens
+		original.hiddens.forEach((k, v) -> {
+			hiddens.compute(
+					k,
+					(clonedK, clonedV) ->
+							// if the cloned map does not have the mapping or maps to null
+							(clonedV == null && v != null) ?
+									// copy and adds it
+									v.copy(clones, new IdentityHashSet<>()) :
+									// otherwise don't change anything
+									clonedV
+			);
+		});
+
+		original.connections.forEach((k, v) -> {
+			connections.compute(
+					k,
+					(clonedK, clonedV) ->
+							(clonedV == null && v != null) ?
+									v.copy(clones, new IdentityHashSet<>()) :
+									clonedV
+			);
+		});
 	}
 
 
@@ -111,17 +138,16 @@ public class Network implements DeepCopyable<Network> {
 			recursivelyDiscardCache(node);
 
 		if (inputs.size() != getInputs().size()) {
-			throw new IllegalArgumentException(
-					"Input size mismatch: expected " + getInputs().size() +
+			Logger.logln("Input size mismatch: expected " + getInputs().size() +
 							", found " + inputs.size());
 		}
 
 		// write new values
 		for (int i = 0; i < this.inputs.size(); i++) {
-			InputNode node = this.inputs.get(i);
+			InputNode input = this.inputs.get(i);
 			double value = inputs.get(i);
 
-			node.write(value);
+			input.write(value);
 		}
 
 		// the read triggers evaluation
@@ -185,14 +211,20 @@ public class Network implements DeepCopyable<Network> {
 	 */
 	public boolean putNode(Node node) {
 
-		if (node instanceof InputNode && !inputs.contains(node))	//don't add duplicates
-			return inputs.add((InputNode) node);
+		if (node instanceof InputNode) {
+			if (!inputs.contains(node)) //don't add duplicates
+				return inputs.add((InputNode) node);
+		}
 
-		else if (node instanceof OutputNode && !outputs.contains(node))
-			return outputs.add((OutputNode) node);
+		else if (node instanceof OutputNode) {
+			if (!outputs.contains(node))
+				return outputs.add((OutputNode) node);
+		}
 
-		else if (node instanceof HiddenNode && !hiddens.containsKey(node.getId())) {
-			hiddens.put(node.getId(), (HiddenNode) node);
+		// the instanceof and contains checks are not combined so input/output nodes are
+		// not added to hiddens
+		else if (!hiddens.containsKey(node.getId())) {
+			hiddens.put(node.getId(), node);
 			return true;
 		}
 
@@ -268,11 +300,17 @@ public class Network implements DeepCopyable<Network> {
 	 * in a cycle
 	 */
 	public boolean tryConnect(Node<?> from, Node<?> to, double weight) {
-		from = findNode(from);
-		to = findNode(to);
+//		from = findNode(from);
+//		to = findNode(to);
+//
+//		if (from == null || to == null)
+//			throw new IllegalArgumentException("End node is not in this network");
 
-		if (from == null || to == null)
-			throw new IllegalArgumentException("End node is not in this network");
+		// check if connection exists
+		for (final var connection : connections.values()) {
+			if (connection.getPrevNode() == from && connection.getNextNode() == to)
+				return false;
+		}
 
 		// check for cycle
 		/*
@@ -281,8 +319,10 @@ public class Network implements DeepCopyable<Network> {
 		https://stackoverflow.com/a/20298238
 		 */
 		// starting at 'to', try to reach 'from'
-		if (findPath(to, from))
+		if (findPath(to, from)) {
+			leaveAll();
 			return false;
+		}
 
 		// clear visited flag
 		leaveAll();
@@ -328,7 +368,7 @@ public class Network implements DeepCopyable<Network> {
 		for (final var connection : root.getOutputs()) {
 			final var nextNode = connection.getNextNode();
 
-			// otherwise, recursively search unless already searched
+			// recursively search unless already searched
 			if (!nextNode.isVisited()) {
 				// return only if found, otherwise continue for loop
 				if (findPath(nextNode, target))
@@ -352,7 +392,7 @@ public class Network implements DeepCopyable<Network> {
 	 * between. This is the "add node" mutation.
 	 * The incoming connection of the new Node will have the same weight as the old
 	 * connection.
-	 * @param connection	The Connection to place the new AbstractNode on
+	 * @param connection	The Connection to place the new Node on
 	 */
 	public void addNode(Connection connection) {
 		if (!connections.containsKey(connection.getInnovationNumber()))
@@ -380,10 +420,21 @@ public class Network implements DeepCopyable<Network> {
 						connection.getNextNode()
 				);
 
+		// add new node
 		newNode.addInput(connection1);
 		newNode.addOutput(connection2);
-
 		hiddens.put(newNode.getId(), newNode);
+
+		// update connection in prev node
+		connection.getPrevNode().removeOutput(connection);
+		connection.getPrevNode().addOutput(connection1);
+
+		// update connection in next node
+		connection.getNextNode().removeInput(connection);
+		connection.getNextNode().addInput(connection2);
+
+		// update connections map in this network
+		connections.remove(connection.getInnovationNumber());
 		connections.put(connection1.getInnovationNumber(), connection1);
 		connections.put(connection2.getInnovationNumber(), connection2);
 	}
@@ -392,10 +443,39 @@ public class Network implements DeepCopyable<Network> {
 	//////////////////////////////
 	//basic getters - nothing interesting past this point
 
-	public Map<Long, HiddenNode> getIDToHiddens() { return hiddens; }
-	public Collection<HiddenNode> getHiddens() { return hiddens.values(); }
+	public Map<Long, Node<?>> getIDToHiddens() { return hiddens; }
+	public Collection<Node<?>> getHiddens() { return hiddens.values(); }
 	public List<InputNode> getInputs() { return inputs; }
 	public List<OutputNode> getOutputs() { return outputs; }
 	public Map<Long, Connection> getInnovNumToConnections() { return connections; }
 	public Collection<Connection> getConnections() { return connections.values(); }
+
+
+	// DEBUG
+
+//	public boolean hasCycle() {
+//		boolean result = false;
+//		for (OutputNode outputNode : outputs) {
+//			if (!dfs(outputNode)) {
+//				result = true;
+//				break;
+//			}
+//			leaveAll();
+//		}
+//		if (result)
+//			leaveAll();
+//		return result;
+//	}
+//
+//	private boolean dfs(Node<?> root) {
+//		if (root.isVisited())
+//			return false;
+//		root.visit();
+//
+//		for (Connection c : root.getInputs()) {
+//			if (!dfs(c.getPrevNode()))
+//				return false;
+//		}
+//		return true;
+//	}
 }

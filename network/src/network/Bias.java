@@ -47,6 +47,9 @@ public final class Bias extends ExitOnlyNode<Bias> {
 	public Bias copy(
 			IdentityHashMap<Object, Object> clones,
 			IdentityHashSet<Object> cloning) {
+		if (cloning.contains(this))
+			return null;
+
 		cloning.add(this);
 
 		final Bias clone;
@@ -56,6 +59,7 @@ public final class Bias extends ExitOnlyNode<Bias> {
 			clone = new Bias(this, clones, cloning);
 
 		cloning.remove(this);
+		clones.put(this, clone);
 		return clone;
 	}
 }

@@ -1,6 +1,9 @@
 package simulation;
 
+import logging.Logger;
 import network.Network;
+
+import java.util.stream.Collectors;
 
 /**
  * Represents a Driver of a Car in the World. In addition to a reference to a Network
@@ -75,9 +78,14 @@ class Driver implements Comparable<Driver> {
 		// mainly for debug compatibility
 		if (network == null) return;
 
-		// get response from network
-		final var inputs = car.getRangeReadingsAsList(track.getEdges());
+		// get readings
+		var inputs = car.getRangeReadingsAsList(track.getEdges()).stream()
+				             .map(n -> 1/n)
+				             .collect(Collectors.toList());
+//		Logger.logln(inputs.toString());
+		// get response
 		final var outputs = network.compute(inputs);
+//		Logger.logln(outputs.toString());
 
 		// apply network's response to car
 		int i = 0, outputSize = outputs.size();

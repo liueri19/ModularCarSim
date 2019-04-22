@@ -100,6 +100,7 @@ public final class Main {
 		final double minFitness =
 				Double.parseDouble(config.getProperty("min_fitness"));
 
+		Logger.logln("Initializing generation 0");
 		// init first generation, to be updated later, must be mutable
 		Collection<Network> population =
 				evolver.initPopulation(populationSize, numInputs, numOutputs);
@@ -108,14 +109,21 @@ public final class Main {
 		double bestFitness;
 		int generationCount = 0;
 		do {
-			Logger.logln("Generation " + ++generationCount);
+//			Logger.logln("Evaluating generation " + generationCount);
 			// evaluate networks
 			final Map<Network, Double> evaluatedNetworks = evaluator.evaluate(population);
 			bestFitness = evaluatedNetworks.values().iterator().next(); // first element
 
+			generationCount++;
+//			Logger.logln("Initializing generation " + generationCount);
 			// next generation
 			population = evolver.nextGeneration(evaluatedNetworks, populationSize, harshness);
+
+			if (generationCount % 50 == 0)
+				Logger.logf("generation: %s; best: %f%n", generationCount, bestFitness);
+
 		} while (bestFitness < minFitness);
+//		} while (true);
 
 
 		// TODO write champ to file (implement NetworkIO)

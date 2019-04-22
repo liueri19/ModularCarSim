@@ -36,6 +36,10 @@ public final class InputNode extends ExitOnlyNode<InputNode> {
 	public InputNode copy(
 			IdentityHashMap<Object, Object> clones,
 			IdentityHashSet<Object> cloning) {
+		// if this is being cloned, circular reference reached
+		if (cloning.contains(this))
+			return null;
+
 		cloning.add(this);
 
 		final InputNode clone;
@@ -45,6 +49,7 @@ public final class InputNode extends ExitOnlyNode<InputNode> {
 			clone = new InputNode(this, clones, cloning);
 
 		cloning.remove(this);
+		clones.put(this, clone);
 		return clone;
 	}
 }

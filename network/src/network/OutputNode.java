@@ -49,6 +49,9 @@ public final class OutputNode extends Node<OutputNode> {
 
 	@Override
 	public OutputNode copy(IdentityHashMap<Object, Object> clones, IdentityHashSet<Object> cloning) {
+		if (cloning.contains(this))
+			return null;
+
 		cloning.add(this);
 
 		final OutputNode clone;
@@ -58,11 +61,7 @@ public final class OutputNode extends Node<OutputNode> {
 			clone = new OutputNode(this, clones, cloning);
 
 		cloning.remove(this);
+		clones.put(this, clone);
 		return clone;
-	}
-
-	@Override
-	public void fixNulls(OutputNode original, IdentityHashMap<Object, Object> clones) {
-		super.fixNulls(original, clones);
 	}
 }

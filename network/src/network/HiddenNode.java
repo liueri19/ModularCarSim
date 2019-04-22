@@ -50,6 +50,9 @@ public final class HiddenNode extends Node<HiddenNode> {
 	public HiddenNode copy(
 			IdentityHashMap<Object, Object> clones,
 			IdentityHashSet<Object> cloning) {
+		if (cloning.contains(this))
+			return null;
+
 		cloning.add(this);
 
 		final HiddenNode clone;
@@ -59,6 +62,7 @@ public final class HiddenNode extends Node<HiddenNode> {
 			clone = new HiddenNode(this, clones, cloning);
 
 		cloning.remove(this);
+		clones.put(this, clone);
 		return clone;
 	}
 }

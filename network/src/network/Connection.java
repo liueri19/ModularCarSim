@@ -11,8 +11,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * A connection has a weight and an innovation number.
  */
 public class Connection implements DeepCopyable<Connection> {
-	private final Node<?> prevNode;
-	private final Node<?> nextNode;
+	private Node<?> prevNode;
+	private Node<?> nextNode;
 	private double weight;
 	private final long innovNum;
 
@@ -41,6 +41,9 @@ public class Connection implements DeepCopyable<Connection> {
 
 	@Override
 	public Connection copy(IdentityHashMap<Object, Object> clones, IdentityHashSet<Object> cloning) {
+		if (cloning.contains(this))
+			return null;
+
 		cloning.add(this);
 
 		final Connection clone;
@@ -50,12 +53,20 @@ public class Connection implements DeepCopyable<Connection> {
 			clone = new Connection(this, clones, cloning);
 
 		cloning.remove(this);
+		clones.put(this, clone);
 		return clone;
 	}
 
 	@Override
-	public void fixNulls(Connection connection, IdentityHashMap<Object, Object> clones) {
-		// TODO fix
+	public void fixNulls(Connection original, IdentityHashMap<Object, Object> clones) {
+		// copy returns cloned object if already cloned
+		if (prevNode == null)
+			prevNode = original.prevNode.copy(clones, new IdentityHashSet<>());
+		if (nextNode == null)
+			nextNode = original.nextNode.copy(clones, new IdentityHashSet<>());
+
+		if (prevNode == null || nextNode == null)
+			throw new IllegalStateException("Missing clone");
 	}
 
 
@@ -74,9 +85,9 @@ public class Connection implements DeepCopyable<Connection> {
 	@Override
 	public String toString() {
 		return getInnovationNumber() + ":\t" +
-				getPrevNode().toString() + "->" +
-				getWeight()  + "->" +
-				getNextNode().toString();
+				       getPrevNode() + "->" +
+				       getWeight()  + "->" +
+				       getNextNode();
 	}
 
 	/**
@@ -114,6 +125,14 @@ public class Connection implements DeepCopyable<Connection> {
 		return new Connection(innovNum, weight, prevNode, nextNode);
 	}
 
+
+	/*
+	There are two types of equals for a connection: cloning equality and structural
+	equality. During cloning, only innovation number should be checked to see if a
+	connection is the cloned counterpart of the corresponding connection in the original
+	network. For other purposes, two connections are equal if they both connect from equal
+	nodes to equal nodes.
+	 */
 
 	/**
 	 * Two Connections are logically equal if they both connect the same Nodes, even if
