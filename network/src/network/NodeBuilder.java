@@ -75,7 +75,7 @@ public class NodeBuilder {
 	 * object to the matching subclass of the specified NodeType.
 	 * @return	a Node with the specified parameters
 	 */
-	public Node build() {
+	public Node<?> build() {
 		if (type == null) throw new IllegalStateException("NodeType must be specified");
 		if (id < 0) id = getNextNodeID();
 		if (prevConnections == null) prevConnections = new ArrayList<>();

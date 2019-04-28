@@ -94,6 +94,6 @@ public final class SimEvaluator implements Evaluator {
 		if (operations < 0)
 			throw new IllegalArgumentException("Uninitialized operations in Driver instance " + driver);
 
-		return distance * distance - operations;
+		return distance * distance - 0.5 * operations;
 	}
 }

@@ -1,4 +1,5 @@
 import service.Evaluator;
+import service.Evolver;
 
 module carsim.simulation {
 
@@ -8,6 +9,7 @@ module carsim.simulation {
 	requires carsim.network;
 
 	provides Evaluator with simulation.SimEvaluator;
+	provides Evolver with simulation.SimEvolver;
 
 	requires util.simple.logging;
 }

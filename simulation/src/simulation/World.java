@@ -296,7 +296,8 @@ public final class World extends Application {
 		stage.setOnCloseRequest(event -> terminate());
 
 		stage.setScene(scene);
-		stage.show();
+		// DEBUG TODO uncomment
+//		stage.show();
 
 		isGraphicsReady = true;
     }

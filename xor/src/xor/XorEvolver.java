@@ -1,4 +1,4 @@
-package simpleevolver;
+package xor;
 
 import network.*;
 import service.Evolver;
@@ -13,15 +13,15 @@ import java.util.stream.Stream;
  * networks, survivors of each generation only gets multiplied with possibly random
  * mutations.
  */
-public final class SimpleEvolver implements Evolver {
+public final class XorEvolver implements Evolver {
 
 	private final Random random = new Random();
 
 
 	/**
-	 * Constructs a SimpleEvolver.
+	 * Constructs a XorEvolver.
 	 */
-	public SimpleEvolver() {}	// ServiceLoader uses this
+	public XorEvolver() {}	// ServiceLoader uses this
 
 
 	/**
@@ -48,7 +48,28 @@ public final class SimpleEvolver implements Evolver {
 	 */
 	@Override
 	public Network initNetwork(int numInputs, int numOutputs) {
-		final Network network = new Network(numInputs, numOutputs, Math::tanh);
+//		final DoubleUnaryOperator sigmoid = x -> 1/(1 + Math.exp(-x));
+//		final Network network = new Network(numInputs, numOutputs, Math::tanh);
+
+		// init input nodes, use custom activation function
+		final List<InputNode> inputs = new ArrayList<>();
+		for (int i = 0; i < 2; i++) {
+			inputs.add(
+					(InputNode) new NodeBuilder(NodeType.INPUT)
+							            .setActivationFunction(x -> (x > 0) ? 1 : 0)
+							            .build()
+			);
+		}
+
+		// init output nodes, use absolute value of tanh
+		final List<OutputNode> outputs = List.of(
+				(OutputNode) new NodeBuilder(NodeType.OUTPUT)
+						             .setActivationFunction(x -> Math.abs(Math.tanh(x)))
+						             .build()
+		);
+
+
+		final Network network = new Network(inputs, outputs);
 
 		// connect input to output nodes
 		for (Node input : network.getInputs()) {
